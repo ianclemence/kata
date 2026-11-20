@@ -387,6 +387,21 @@ mod tests {
     }
 
     #[test]
+    fn a_pixel_is_ranked_on_the_same_luma_scale_as_the_inks() {
+        // Pure blue is Rec.709 luma 0.0722 * 255 ~ 18, so it belongs to an ink
+        // of luma 30, not to black. `requantise` carried its own copy of the
+        // Rec.709 weights with the blue term written 72 instead of 722, which
+        // scores this pixel ~2 and drops it on the black ink, while the palette
+        // beside it is measured with the correct weights. The two sides of the
+        // comparison must not drift apart.
+        let mut img = RgbaImage::new(1, 1);
+        img.put_pixel(0, 0, image::Rgba([0, 0, 255, 255]));
+        let palette = vec![Rgba::rgb(0, 0, 0), Rgba::rgb(30, 30, 30)];
+        let (index, _) = requantise(&img, &palette);
+        assert_eq!(index.get_pixel(0, 0).0[0], 1);
+    }
+
+    #[test]
     fn highlight_clip_maps_the_ceiling_to_white() {
         // A bright image: without clipping, nothing would be pure white.
         let mut img = RgbaImage::new(32, 4);
