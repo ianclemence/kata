@@ -32,8 +32,6 @@ impl ModelSpec {
     }
 }
 
-const HF: &str = "https://huggingface.co/onnx-community";
-
 /// Every model Kata will download. All are MIT licensed.
 pub const MODELS: &[ModelSpec] = &[
     ModelSpec {

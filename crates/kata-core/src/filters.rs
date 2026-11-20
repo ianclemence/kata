@@ -6,7 +6,6 @@
 //! and WebAssembly, and a kernel that changes with the CPU's instruction set
 //! cannot promise that. See README, "Resampling".
 
-use crate::color::Rgba;
 use crate::parallel::for_each_row_mut;
 use image::{GrayImage, Luma, RgbaImage};
 
@@ -17,8 +16,9 @@ pub fn to_luma(image: &RgbaImage) -> GrayImage {
     let source = image.as_raw();
     for (index, pixel) in out.as_mut().iter_mut().enumerate() {
         let p = &source[index * 4..index * 4 + 4];
-        // Rec. 709, in integer arithmetic to stay deterministic.
-        let y = (2126 * u32::from(p[0]) + 7152 * u32::from(p[1]) + 72 * u32::from(p[2]) + 5000)
+        // Rec. 709, in integer arithmetic to stay deterministic. The weights
+        // are parts per 10,000 and sum to 10,000, so the result spans 0..=255.
+        let y = (2126 * u32::from(p[0]) + 7152 * u32::from(p[1]) + 722 * u32::from(p[2]) + 5000)
             / 10000;
         *pixel = y as u8;
     }
@@ -40,6 +40,9 @@ pub fn percentile(hist: &[u32; 256], fraction: f32) -> u8 {
         return 0;
     }
     let target = (f64::from(fraction.clamp(0.0, 1.0)) * total as f64).ceil() as u64;
+    // At least one, so a fraction of zero means the darkest value that is
+    // actually present rather than bin 0.
+    let target = target.max(1);
     let mut running = 0u64;
     for (value, &count) in hist.iter().enumerate() {
         running += u64::from(count);
@@ -78,9 +81,14 @@ pub fn clahe(plane: &GrayImage, tiles: u32, clip: f32) -> GrayImage {
             let y1 = (y0 + tile_h).min(height);
             let mut hist = [0u32; 256];
             let mut count = 0u32;
+            let mut nonempty = 0u32;
             for y in y0..y1 {
                 for x in x0..x1 {
-                    hist[plane.get_pixel(x, y).0[0] as usize] += 1;
+                    let bin = &mut hist[plane.get_pixel(x, y).0[0] as usize];
+                    if *bin == 0 {
+                        nonempty += 1;
+                    }
+                    *bin += 1;
                     count += 1;
                 }
             }
@@ -90,7 +98,13 @@ pub fn clahe(plane: &GrayImage, tiles: u32, clip: f32) -> GrayImage {
 
             // Clip the histogram and spread the excess evenly, which is what
             // stops noise in a flat tile from being amplified into contours.
-            let limit = ((count as f32 / 256.0) * clip).max(1.0) as u32;
+            //
+            // The limit is measured against the bins that are actually
+            // occupied, not against all 256. A tile whose tones span only a
+            // narrow band has few occupied bins; clipping it to a multiple of
+            // `count / 256` would flatten exactly the contrast we are trying to
+            // create, and a small tile would be clipped away entirely.
+            let limit = ((count as f32 / nonempty.max(1) as f32) * clip).max(1.0) as u32;
             let mut excess = 0u32;
             for bin in &mut hist {
                 if *bin > limit {
@@ -178,8 +192,10 @@ pub fn bilateral(image: &RgbaImage, radius: u32, sigma_space: f32, sigma_color: 
 
     let mut out = image.clone();
     let dest: &mut [u8] = out.as_mut();
+    // One row is `width` pixels, which is `width * 4` bytes of RGBA.
+    let row_bytes = stride * 4;
 
-    for_each_row_mut(dest, stride * 4, |y, row| {
+    for_each_row_mut(dest, row_bytes, |y, row| {
         for (x, pixel) in row.chunks_mut(4).enumerate() {
             let center = gray[y * stride + x];
             let mut acc = [0f32; 3];
@@ -310,16 +326,6 @@ pub fn resize(image: &RgbaImage, width: u32, height: u32) -> RgbaImage {
 mod tests {
     use super::*;
     use image::Rgba;
-
-    fn ramp(width: u32, height: u32) -> GrayImage {
-        let mut img = GrayImage::new(width, height);
-        for y in 0..height {
-            for x in 0..width {
-                img.put_pixel(x, y, Luma([(x * 255 / width.max(1)) as u8]));
-            }
-        }
-        img
-    }
 
     #[test]
     fn luma_follows_rec709() {

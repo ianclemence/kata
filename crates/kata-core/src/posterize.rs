@@ -228,7 +228,7 @@ fn requantise(image: &RgbaImage, palette: &[Rgba]) -> (GrayImage, Vec<Rgba>) {
     let mut index = GrayImage::new(w, h);
     for (x, y, pixel) in image.enumerate_pixels() {
         let p = pixel.0;
-        let value = (2126 * u32::from(p[0]) + 7152 * u32::from(p[1]) + 72 * u32::from(p[2]) + 5000)
+        let value = (2126 * u32::from(p[0]) + 7152 * u32::from(p[1]) + 722 * u32::from(p[2]) + 5000)
             / 10000;
         let mut best = 0usize;
         let mut best_distance = i32::MAX;
@@ -337,7 +337,7 @@ mod tests {
 
     fn gradient(width: u32, height: u32) -> RgbaImage {
         let mut img = RgbaImage::new(width, height);
-        for (x, y, pixel) in img.enumerate_pixels_mut() {
+        for (x, _, pixel) in img.enumerate_pixels_mut() {
             let v = (x * 255 / width.max(1)) as u8;
             *pixel = image::Rgba([v, v, v, 255]);
         }
@@ -384,6 +384,21 @@ mod tests {
         for ink in 0..5u8 {
             assert!(ink_area(&out.index, ink) > 0, "ink {ink} is unused");
         }
+    }
+
+    #[test]
+    fn a_pixel_is_ranked_on_the_same_luma_scale_as_the_inks() {
+        // Pure blue is Rec.709 luma 0.0722 * 255 ~ 18, so it belongs to an ink
+        // of luma 30, not to black. `requantise` carried its own copy of the
+        // Rec.709 weights with the blue term written 72 instead of 722, which
+        // scores this pixel ~2 and drops it on the black ink, while the palette
+        // beside it is measured with the correct weights. The two sides of the
+        // comparison must not drift apart.
+        let mut img = RgbaImage::new(1, 1);
+        img.put_pixel(0, 0, image::Rgba([0, 0, 255, 255]));
+        let palette = vec![Rgba::rgb(0, 0, 0), Rgba::rgb(30, 30, 30)];
+        let (index, _) = requantise(&img, &palette);
+        assert_eq!(index.get_pixel(0, 0).0[0], 1);
     }
 
     #[test]
