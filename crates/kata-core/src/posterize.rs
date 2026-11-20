@@ -227,9 +227,10 @@ fn requantise(image: &RgbaImage, palette: &[Rgba]) -> (GrayImage, Vec<Rgba>) {
     let luma: Vec<u8> = palette.iter().map(Rgba::luma).collect();
     let mut index = GrayImage::new(w, h);
     for (x, y, pixel) in image.enumerate_pixels() {
-        let p = pixel.0;
-        let value =
-            (2126 * u32::from(p[0]) + 7152 * u32::from(p[1]) + 72 * u32::from(p[2]) + 5000) / 10000;
+        // One lightness scale for pixels and inks. This used to duplicate the
+        // Rec.709 arithmetic with a blue weight of 72 instead of 722, so a
+        // blue-heavy pixel was ranked against a palette measured correctly.
+        let value = Rgba::from(*pixel).luma();
         let mut best = 0usize;
         let mut best_distance = i32::MAX;
         for (i, &ink_luma) in luma.iter().enumerate() {
@@ -384,6 +385,20 @@ mod tests {
         for ink in 0..5u8 {
             assert!(ink_area(&out.index, ink) > 0, "ink {ink} is unused");
         }
+    }
+
+    #[test]
+    fn a_pixel_is_ranked_on_the_same_luma_scale_as_the_inks() {
+        // Pure blue has a Rec.709 luma of 0.0722 * 255 ~ 18, so it sits nearer
+        // an ink of luma 30 than one of luma 0. `requantise` once carried its
+        // own copy of the weights with 72 for blue, scoring this pixel ~2 and
+        // dropping it on the black ink while the palette was measured
+        // correctly; the two scales must not diverge.
+        let mut img = RgbaImage::new(1, 1);
+        img.put_pixel(0, 0, image::Rgba([0, 0, 255, 255]));
+        let palette = vec![Rgba::rgb(0, 0, 0), Rgba::rgb(30, 30, 30)];
+        let (index, _) = requantise(&img, &palette);
+        assert_eq!(index.get_pixel(0, 0).0[0], 1);
     }
 
     #[test]
