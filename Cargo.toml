@@ -1,0 +1,40 @@
+[workspace]
+resolver = "2"
+members = ["crates/kata-core", "crates/kata-cli", "crates/kata-web"]
+exclude = ["crates/kata-app"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.82"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/OWNER/kata"
+authors = ["Kata contributors"]
+
+[workspace.dependencies]
+kata-core = { path = "crates/kata-core" }
+image = { version = "0.25", default-features = false, features = [
+  "jpeg",
+  "png",
+  "webp",
+  "bmp",
+  "tiff",
+] }
+rayon = "1.10"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+sha2 = "0.10"
+hex = "0.4"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+
+[profile.release.package.kata-web]
+opt-level = "s"
+
+[profile.dev]
+# Image work is unusable in a debug build without this.
+opt-level = 1

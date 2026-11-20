@@ -1,0 +1,25 @@
+{
+  "name": "kata",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "On-device photo background removal and screen-print stickers.",
+  "scripts": {
+    "rust:version": "cargo --version",
+    "rust:show": "rustup show",
+    "rust:default": "rustup default stable",
+    "rust:default-gnu": "rustup default stable-x86_64-pc-windows-gnu",
+    "rust:toolchain": "rustup show active-toolchain",
+    "probe:msvc": "where link.exe",
+    "probe:vs": "where vswhere.exe",
+    "rust:target-wasm": "rustup target add wasm32-unknown-unknown",
+    "fmt": "cargo fmt --all",
+    "fmt:check": "cargo fmt --all -- --check",
+    "clippy": "cargo clippy --workspace --all-targets -- -D warnings",
+    "test": "cargo test --workspace",
+    "build": "cargo build --workspace --release",
+    "build:cli": "cargo build --package kata-cli --release",
+    "build:web": "cargo build --package kata-web --target wasm32-unknown-unknown --release",
+    "check": "cargo check --workspace"
+  }
+}

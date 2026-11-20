@@ -1,0 +1,10 @@
+/target
+node_modules
+/ui/dist
+/ui/pkg
+/ui/dist-web
+/dist
+*.log
+.DS_Store
+Thumbs.db
+/tests/golden/**/*.out.png

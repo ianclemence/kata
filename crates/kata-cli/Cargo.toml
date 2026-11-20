@@ -1,0 +1,18 @@
+[package]
+name = "kata-cli"
+description = "Command-line batch background removal and sticker export for Kata."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "kata"
+path = "src/main.rs"
+
+[dependencies]
+kata-core.workspace = true
+image.workspace = true
+serde.workspace = true
+serde_json.workspace = true

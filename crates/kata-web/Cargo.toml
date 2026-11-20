@@ -1,0 +1,11 @@
+[package]
+name = "kata-web"
+description = "WebAssembly bindings for Kata, for the browser build."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
