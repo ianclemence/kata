@@ -73,14 +73,9 @@ pub fn to_tensor_input(image: &RgbaImage, size: u32) -> (Vec<f32>, f32, u32, u32
     let offset_x = (size - scaled_w) / 2;
     let offset_y = (size - scaled_h) / 2;
 
+    // Padding is the normalised mean colour, which is zero by construction.
     let plane = (size * size) as usize;
     let mut tensor = vec![0f32; plane * 3];
-
-    for c in 0..3 {
-        for i in 0..plane {
-            tensor[c * plane + i] = (0.0 - MEAN[c]) / STD[c];
-        }
-    }
 
     for y in 0..scaled_h {
         let sy = (y as f32 / scale).floor() as u32;
@@ -127,7 +122,6 @@ pub fn logits_to_mask(
         for x in 0..width {
             let sx = (x as f32 * scale).floor() as i64;
             let sx = (sx + i64::from(offset_x)).clamp(0, output_size as i64 - 1) as u32;
-            let _ = scaled_w;
             let logit = logits[(sy * output_size + sx) as usize];
             let probability = sigmoid(logit);
             mask.set(x, y, (probability * 255.0).round().clamp(0.0, 255.0) as u8);
@@ -193,8 +187,8 @@ mod tests {
         let img = RgbaImage::from_pixel(4, 4, Pixel([255, 255, 255, 255]));
         let (tensor, _, _, _) = to_tensor_input(&img, 8);
         assert_eq!(tensor.len(), 8 * 8 * 3);
-        // White maps to (1 - mean) / std.
-        let expected = (1.0 - MEAN[0]) / STD[0];
+        // White in the blue plane maps to (1 - mean) / std for that plane.
+        let expected = (1.0 - MEAN[2]) / STD[2];
         assert!((tensor[2 * 64 + 27] - expected).abs() < 1e-4);
     }
 

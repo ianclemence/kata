@@ -396,13 +396,24 @@ fn morphology(mask: &Mask, radius: usize, dilate: bool) -> Mask {
         for (x, out) in row.iter_mut().enumerate() {
             let lo = x.saturating_sub(radius);
             let hi = (x + radius).min(w - 1);
-            *out = reduce(&src[lo..=hi], dilate);
+            // Erosion treats everything beyond the edge as background, so a
+            // subject that runs to the border still shrinks. Dilation clamps,
+            // because there is nothing outside to grow into.
+            *out = if !dilate && (x < radius || x + radius >= w) {
+                0
+            } else {
+                reduce(&src[lo..=hi], dilate)
+            };
         }
     });
 
     let mut out = Mask::new(mask.width, mask.height, 0);
     for_each_row_mut(&mut out.data, w, |y, row| {
         for (x, value) in row.iter_mut().enumerate() {
+            if !dilate && (y < radius || y + radius >= h) {
+                *value = 0;
+                continue;
+            }
             let lo = y.saturating_sub(radius);
             let hi = (y + radius).min(h - 1);
             let mut acc = if dilate { 0u8 } else { 255u8 };
@@ -444,8 +455,8 @@ pub fn despill(image: &mut RgbaImage, mask: &Mask) {
     let pixels: &mut [u8] = image.as_mut();
     let stride = w as usize;
 
-    for_each_row_mut(pixels, stride, |y, row| {
-        for (x, pixel) in row.iter_mut().enumerate() {
+    for_each_row_mut(pixels, stride * 4, |y, row| {
+        for (x, pixel) in row.chunks_mut(4).enumerate() {
             let alpha = mask.data[y * stride + x];
             if alpha == 0 || alpha == 255 {
                 continue;
@@ -479,7 +490,7 @@ pub fn despill(image: &mut RgbaImage, mask: &Mask) {
                 let n = counts[3] / 255;
                 if n > 0 {
                     for c in 0..3 {
-                        pixel.0[c] = (counts[c] / n).min(255) as u8;
+                        pixel[c] = (counts[c] / n).min(255) as u8;
                     }
                 }
             }
@@ -513,15 +524,20 @@ mod tests {
 
     #[test]
     fn dilate_grows_and_erode_shrinks() {
+        // Columns 0..=3 are solid out of 9, so the boundary sits at x = 3.
         let mask = checker(9, 5);
         let grown = mask.dilate(2);
-        let shrunk = mask.erode(2);
+        let shrunk = mask.erode(1);
         assert!(grown.coverage() > mask.coverage());
         assert!(shrunk.coverage() < mask.coverage());
-        // A 2 px dilation moves the boundary two pixels right.
-        assert_eq!(grown.get(6, 2), 255);
-        assert_eq!(mask.get(6, 2), 0);
-        assert_eq!(shrunk.get(2, 2), 0);
+        // A 2 px dilation moves the boundary two pixels right, and no further.
+        assert_eq!(grown.get(5, 2), 255);
+        assert_eq!(grown.get(6, 2), 0);
+        // A 1 px erosion pulls the boundary in from each side.
+        assert_eq!(shrunk.get(1, 2), 255);
+        assert_eq!(shrunk.get(2, 2), 255);
+        assert_eq!(shrunk.get(0, 2), 0);
+        assert_eq!(shrunk.get(3, 2), 0);
     }
 
     #[test]

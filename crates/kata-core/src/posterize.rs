@@ -228,7 +228,7 @@ fn requantise(image: &RgbaImage, palette: &[Rgba]) -> (GrayImage, Vec<Rgba>) {
     let mut index = GrayImage::new(w, h);
     for (x, y, pixel) in image.enumerate_pixels() {
         let p = pixel.0;
-        let value = (2126 * u32::from(p[0]) + 7152 * u32::from(p[1]) + 72 * u32::from(p[2]) + 5000)
+        let value = (2126 * u32::from(p[0]) + 7152 * u32::from(p[1]) + 722 * u32::from(p[2]) + 5000)
             / 10000;
         let mut best = 0usize;
         let mut best_distance = i32::MAX;
@@ -337,7 +337,7 @@ mod tests {
 
     fn gradient(width: u32, height: u32) -> RgbaImage {
         let mut img = RgbaImage::new(width, height);
-        for (x, y, pixel) in img.enumerate_pixels_mut() {
+        for (x, _, pixel) in img.enumerate_pixels_mut() {
             let v = (x * 255 / width.max(1)) as u8;
             *pixel = image::Rgba([v, v, v, 255]);
         }
