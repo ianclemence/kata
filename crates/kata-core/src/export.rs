@@ -348,10 +348,17 @@ mod tests {
     fn png_encoding_round_trips() {
         let mut img = RgbaImage::new(8, 8);
         img.put_pixel(4, 4, Pixel([1, 2, 3, 255]));
-        let bytes = encode(&img, &ExportOptions::default()).unwrap();
+        // The round trip must keep the canvas and its transparent background;
+        // cropping to the subject is an explicit option with its own test.
+        let options = ExportOptions {
+            crop: false,
+            ..Default::default()
+        };
+        let bytes = encode(&img, &options).unwrap();
         assert_eq!(&bytes[..8], b"\x89PNG\r\n\x1a\n");
         let decoded = image::load_from_memory(&bytes).unwrap().to_rgba8();
         assert_eq!(decoded.get_pixel(7, 7).0[3], 0);
+        assert_eq!(decoded.get_pixel(4, 4).0, [1, 2, 3, 255]);
     }
 
     #[test]

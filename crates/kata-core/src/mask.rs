@@ -396,7 +396,13 @@ fn morphology(mask: &Mask, radius: usize, dilate: bool) -> Mask {
         for (x, out) in row.iter_mut().enumerate() {
             let lo = x.saturating_sub(radius);
             let hi = (x + radius).min(w - 1);
-            *out = reduce(&src[lo..=hi], dilate);
+            // Outside the mask is background, so it reads as zero here: erosion
+            // eats the rim, while dilation still cannot grow past the edge.
+            *out = if !dilate && (x < radius || x + radius >= w) {
+                0
+            } else {
+                reduce(&src[lo..=hi], dilate)
+            };
         }
     });
 
@@ -410,7 +416,11 @@ fn morphology(mask: &Mask, radius: usize, dilate: bool) -> Mask {
                 let v = horizontal[sy * w + x];
                 acc = if dilate { acc.max(v) } else { acc.min(v) };
             }
-            *value = acc;
+            *value = if !dilate && (y < radius || y + radius >= h) {
+                0
+            } else {
+                acc
+            };
         }
     });
     out
@@ -443,9 +453,10 @@ pub fn despill(image: &mut RgbaImage, mask: &Mask) {
     let source = image.clone();
     let pixels: &mut [u8] = image.as_mut();
     let stride = w as usize;
+    let row_bytes = stride * 4;
 
-    for_each_row_mut(pixels, stride, |y, row| {
-        for (x, pixel) in row.iter_mut().enumerate() {
+    for_each_row_mut(pixels, row_bytes, |y, row| {
+        for (x, pixel) in row.chunks_mut(4).enumerate() {
             let alpha = mask.data[y * stride + x];
             if alpha == 0 || alpha == 255 {
                 continue;
@@ -479,7 +490,7 @@ pub fn despill(image: &mut RgbaImage, mask: &Mask) {
                 let n = counts[3] / 255;
                 if n > 0 {
                     for c in 0..3 {
-                        pixel.0[c] = (counts[c] / n).min(255) as u8;
+                        pixel[c] = (counts[c] / n).min(255) as u8;
                     }
                 }
             }
@@ -518,8 +529,10 @@ mod tests {
         let shrunk = mask.erode(2);
         assert!(grown.coverage() > mask.coverage());
         assert!(shrunk.coverage() < mask.coverage());
-        // A 2 px dilation moves the boundary two pixels right.
-        assert_eq!(grown.get(6, 2), 255);
+        // The subject ends at x = 3, so a 2 px dilation moves the boundary to
+        // x = 5 and no further: x = 6 stays transparent.
+        assert_eq!(grown.get(5, 2), 255);
+        assert_eq!(grown.get(6, 2), 0);
         assert_eq!(mask.get(6, 2), 0);
         assert_eq!(shrunk.get(2, 2), 0);
     }
