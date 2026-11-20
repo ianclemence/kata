@@ -120,7 +120,8 @@ pub fn render_sticker_preview(
     // Keep the halo proportional to the preview, not to the original.
     let mut preview_style = style.clone();
     preview_style.halo.auto_scale = false;
-    preview_style.halo.width = style.halo.width * width as f32 / source.width().max(1) as f32;
+    preview_style.halo.width =
+        style.halo.width * width as f32 / source.width().max(1) as f32;
 
     render_sticker(&small, &small_mask, params, &preview_style)
 }
@@ -188,12 +189,7 @@ mod tests {
             let inside = x > width / 4 && x < width * 3 / 4 && y > height / 4 && y < height * 3 / 4;
             let v = if inside { 210 } else { 40 };
             let tint = ((x + y) % 16) as u8;
-            *pixel = Pixel([
-                v,
-                v.saturating_add(tint / 4),
-                v.saturating_sub(tint / 4),
-                255,
-            ]);
+            *pixel = Pixel([v, v.saturating_add(tint / 4), v.saturating_sub(tint / 4), 255]);
         }
         img
     }
@@ -252,12 +248,7 @@ mod tests {
     fn an_empty_mask_is_reported_rather_than_exported() {
         let img = photo(32, 32);
         let mask = Mask::new(32, 32, 0);
-        let err = render_sticker(
-            &img,
-            &mask,
-            &MaskParams::default(),
-            &StickerStyle::default(),
-        );
+        let err = render_sticker(&img, &mask, &MaskParams::default(), &StickerStyle::default());
         assert!(matches!(err, Err(KataError::EmptySubject)));
     }
 
@@ -307,11 +298,7 @@ mod tests {
         let out = render_sticker_preview(&img, &mask, &MaskParams::default(), &style, 100).unwrap();
         assert!(out.width() <= 100);
         assert!(out.height() <= 100);
-        assert_eq!(
-            out.width() * 120,
-            out.height() * 200,
-            "aspect ratio drifted"
-        );
+        assert_eq!(out.width() * 120, out.height() * 200, "aspect ratio drifted");
     }
 
     #[test]

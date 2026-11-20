@@ -90,7 +90,7 @@ pub fn halftone(image: &mut RgbaImage, palette: &[Rgba], amount: u8, cell: f32) 
             let du = u - u.floor() - 0.5;
             let dv = v - v.floor() - 0.5;
             let distance = (du * du + dv * dv).sqrt() * 2.0; // 0 at the centre
-                                                             // Darker inks print bigger dots.
+            // Darker inks print bigger dots.
             let darkness = 1.0 - ink as f32 / (palette.len() - 1) as f32;
             let radius = (0.35 + darkness * 0.45) * strength;
             if distance > radius {

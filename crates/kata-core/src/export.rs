@@ -348,8 +348,7 @@ mod tests {
     fn png_encoding_round_trips() {
         let mut img = RgbaImage::new(8, 8);
         img.put_pixel(4, 4, Pixel([1, 2, 3, 255]));
-        // The round trip must keep the canvas and its transparent background;
-        // cropping to the subject is an explicit option with its own test.
+        // Cropping is on by default, so keep the whole frame to check the alpha.
         let options = ExportOptions {
             crop: false,
             ..Default::default()
@@ -357,6 +356,7 @@ mod tests {
         let bytes = encode(&img, &options).unwrap();
         assert_eq!(&bytes[..8], b"\x89PNG\r\n\x1a\n");
         let decoded = image::load_from_memory(&bytes).unwrap().to_rgba8();
+        assert_eq!((decoded.width(), decoded.height()), (8, 8));
         assert_eq!(decoded.get_pixel(7, 7).0[3], 0);
         assert_eq!(decoded.get_pixel(4, 4).0, [1, 2, 3, 255]);
     }
@@ -375,24 +375,13 @@ mod tests {
 
     #[test]
     fn pattern_expands_its_tokens() {
-        let name = expand_pattern(
-            "{name}-{index}-{style}-{inks}ink",
-            "portrait",
-            7,
-            "afro",
-            4,
-            10,
-            10,
-        );
+        let name = expand_pattern("{name}-{index}-{style}-{inks}ink", "portrait", 7, "afro", 4, 10, 10);
         assert_eq!(name, "portrait-007-afro-4ink");
     }
 
     #[test]
     fn an_empty_pattern_falls_back_to_the_name() {
-        assert_eq!(
-            expand_pattern("{nope}", "beach", 0, "riso", 3, 1, 1),
-            "{nope}"
-        );
+        assert_eq!(expand_pattern("{nope}", "beach", 0, "riso", 3, 1, 1), "{nope}");
         assert_eq!(expand_pattern("   ", "beach", 0, "riso", 3, 1, 1), "beach");
     }
 

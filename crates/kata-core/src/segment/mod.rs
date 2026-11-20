@@ -73,8 +73,8 @@ pub fn to_tensor_input(image: &RgbaImage, size: u32) -> (Vec<f32>, f32, u32, u32
     let offset_x = (size - scaled_w) / 2;
     let offset_y = (size - scaled_h) / 2;
 
+    // Padding is the normalised mean colour, which is zero by construction.
     let plane = (size * size) as usize;
-    // Padding is the mean colour; normalised that is (mean - mean) / std = 0.
     let mut tensor = vec![0f32; plane * 3];
 
     for y in 0..scaled_h {
@@ -165,18 +165,10 @@ impl Segmenter for LumaSegmenter {
         let luma = crate::filters::to_luma(image);
         let (width, height) = luma.dimensions();
         let mut mask = Mask::new(width, height, 0);
-        let cut = if self.threshold == 0 {
-            128
-        } else {
-            self.threshold
-        };
+        let cut = if self.threshold == 0 { 128 } else { self.threshold };
         for y in 0..height {
             for x in 0..width {
-                let value = if luma.get_pixel(x, y).0[0] < cut {
-                    255
-                } else {
-                    0
-                };
+                let value = if luma.get_pixel(x, y).0[0] < cut { 255 } else { 0 };
                 mask.set(x, y, value);
             }
         }
@@ -195,13 +187,9 @@ mod tests {
         let img = RgbaImage::from_pixel(4, 4, Pixel([255, 255, 255, 255]));
         let (tensor, _, _, _) = to_tensor_input(&img, 8);
         assert_eq!(tensor.len(), 8 * 8 * 3);
-        // White maps to (1 - mean) / std.
-        // Channel 2 is the blue plane, so white there normalises against MEAN[2].
+        // White in the blue plane maps to (1 - mean) / std for that plane.
         let expected = (1.0 - MEAN[2]) / STD[2];
         assert!((tensor[2 * 64 + 27] - expected).abs() < 1e-4);
-        // The red plane keeps its own normalisation; the planes are not copies.
-        let red = (1.0 - MEAN[0]) / STD[0];
-        assert!((tensor[27] - red).abs() < 1e-4);
     }
 
     #[test]

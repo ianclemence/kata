@@ -16,7 +16,8 @@ pub fn to_luma(image: &RgbaImage) -> GrayImage {
     let source = image.as_raw();
     for (index, pixel) in out.as_mut().iter_mut().enumerate() {
         let p = &source[index * 4..index * 4 + 4];
-        // Rec. 709, in integer arithmetic to stay deterministic.
+        // Rec. 709, in integer arithmetic to stay deterministic. The weights
+        // are parts per 10,000 and sum to 10,000, so the result spans 0..=255.
         let y = (2126 * u32::from(p[0]) + 7152 * u32::from(p[1]) + 722 * u32::from(p[2]) + 5000)
             / 10000;
         *pixel = y as u8;
@@ -32,13 +33,16 @@ pub fn histogram(plane: &GrayImage) -> [u32; 256] {
     hist
 }
 
-/// The value below which `fraction` of pixels fall. A fraction of 0.0 is the lowest value present, not the value before the first bin, so the search always lands on one.
+/// The value below which `fraction` of pixels fall.
 pub fn percentile(hist: &[u32; 256], fraction: f32) -> u8 {
     let total: u64 = hist.iter().map(|&c| u64::from(c)).sum();
     if total == 0 {
         return 0;
     }
-    let target = ((f64::from(fraction.clamp(0.0, 1.0)) * total as f64).ceil() as u64).max(1);
+    let target = (f64::from(fraction.clamp(0.0, 1.0)) * total as f64).ceil() as u64;
+    // At least one, so a fraction of zero means the darkest value that is
+    // actually present rather than bin 0.
+    let target = target.max(1);
     let mut running = 0u64;
     for (value, &count) in hist.iter().enumerate() {
         running += u64::from(count);
@@ -77,9 +81,14 @@ pub fn clahe(plane: &GrayImage, tiles: u32, clip: f32) -> GrayImage {
             let y1 = (y0 + tile_h).min(height);
             let mut hist = [0u32; 256];
             let mut count = 0u32;
+            let mut nonempty = 0u32;
             for y in y0..y1 {
                 for x in x0..x1 {
-                    hist[plane.get_pixel(x, y).0[0] as usize] += 1;
+                    let bin = &mut hist[plane.get_pixel(x, y).0[0] as usize];
+                    if *bin == 0 {
+                        nonempty += 1;
+                    }
+                    *bin += 1;
                     count += 1;
                 }
             }
@@ -89,12 +98,13 @@ pub fn clahe(plane: &GrayImage, tiles: u32, clip: f32) -> GrayImage {
 
             // Clip the histogram and spread the excess evenly, which is what
             // stops noise in a flat tile from being amplified into contours.
-            // The limit is `clip` times the average count of an occupied bin.
-            // Averaging over all 256 bins would make a tile with a few values
-            // clip nearly everything, and spreading that excess over the empty
-            // bins invents contrast a flat tile does not have.
-            let occupied = hist.iter().filter(|&&bin| bin > 0).count().max(1) as f32;
-            let limit = ((count as f32 / occupied) * clip).max(1.0) as u32;
+            //
+            // The limit is measured against the bins that are actually
+            // occupied, not against all 256. A tile whose tones span only a
+            // narrow band has few occupied bins; clipping it to a multiple of
+            // `count / 256` would flatten exactly the contrast we are trying to
+            // create, and a small tile would be clipped away entirely.
+            let limit = ((count as f32 / nonempty.max(1) as f32) * clip).max(1.0) as u32;
             let mut excess = 0u32;
             for bin in &mut hist {
                 if *bin > limit {
@@ -156,9 +166,7 @@ pub fn bilateral(image: &RgbaImage, radius: u32, sigma_space: f32, sigma_color: 
         return image.clone();
     }
     let source = image.as_raw();
-    // A row of the RGBA buffer is four bytes per pixel; the luma plane below
-    // indexes with the width alone.
-    let stride = width as usize * 4;
+    let stride = width as usize;
     let radius_i = radius as i32;
 
     // Spatial weights only depend on distance.
@@ -184,10 +192,12 @@ pub fn bilateral(image: &RgbaImage, radius: u32, sigma_space: f32, sigma_color: 
 
     let mut out = image.clone();
     let dest: &mut [u8] = out.as_mut();
+    // One row is `width` pixels, which is `width * 4` bytes of RGBA.
+    let row_bytes = stride * 4;
 
-    for_each_row_mut(dest, stride, |y, row| {
+    for_each_row_mut(dest, row_bytes, |y, row| {
         for (x, pixel) in row.chunks_mut(4).enumerate() {
-            let center = gray[y * width as usize + x];
+            let center = gray[y * stride + x];
             let mut acc = [0f32; 3];
             let mut weight_sum = 0f32;
             let y0 = (y as i32 - radius_i).max(0) as usize;
@@ -199,13 +209,13 @@ pub fn bilateral(image: &RgbaImage, radius: u32, sigma_space: f32, sigma_color: 
                 let dy = ny as i32 - y as i32;
                 for nx in x0..=x1 {
                     let dx = nx as i32 - x as i32;
-                    let spatial_w =
-                        spatial[(dy + radius_i) as usize * side + (dx + radius_i) as usize];
-                    let diff = i32::from(gray[ny * width as usize + nx]) - i32::from(center);
+                    let spatial_w = spatial
+                        [(dy + radius_i) as usize * side + (dx + radius_i) as usize];
+                    let diff = i32::from(gray[ny * stride + nx]) - i32::from(center);
                     let color_w = color_lut[diff.unsigned_abs() as usize];
                     let weight = spatial_w * color_w;
                     weight_sum += weight;
-                    let index = (ny * width as usize + nx) * 4;
+                    let index = (ny * stride + nx) * 4;
                     for c in 0..3 {
                         acc[c] += f32::from(source[index + c]) * weight;
                     }
@@ -217,7 +227,7 @@ pub fn bilateral(image: &RgbaImage, radius: u32, sigma_space: f32, sigma_color: 
                     pixel[c] = (acc[c] / weight_sum).round().clamp(0.0, 255.0) as u8;
                 }
             }
-            pixel[3] = source[(y * width as usize + x) * 4 + 3];
+            pixel[3] = source[(y * stride + x) * 4 + 3];
         }
     });
     out
@@ -311,20 +321,11 @@ pub fn resize(image: &RgbaImage, width: u32, height: u32) -> RgbaImage {
     out
 }
 
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use image::Rgba;
-
-    fn ramp(width: u32, height: u32) -> GrayImage {
-        let mut img = GrayImage::new(width, height);
-        for y in 0..height {
-            for x in 0..width {
-                img.put_pixel(x, y, Luma([(x * 255 / width.max(1)) as u8]));
-            }
-        }
-        img
-    }
 
     #[test]
     fn luma_follows_rec709() {
@@ -355,24 +356,16 @@ mod tests {
         let mut img = GrayImage::new(64, 64);
         for y in 0..64 {
             for x in 0..64 {
-                let v = if x < 32 {
-                    60 + (x % 8) as u8
-                } else {
-                    190 + (x % 8) as u8
-                };
+                let v = if x < 32 { 60 + (x % 8) as u8 } else { 190 + (x % 8) as u8 };
                 img.put_pixel(x, y, Luma([v]));
             }
         }
         let out = clahe(&img, 4, 2.0);
-        let dark_max = (0..32)
-            .flat_map(|x| (0..64).map(move |y| (x, y)))
+        let dark_max = (0..32).flat_map(|x| (0..64).map(move |y| (x, y)))
             .map(|(x, y)| out.get_pixel(x, y).0[0])
             .max()
             .unwrap();
-        assert!(
-            dark_max > 100,
-            "the dark tile did not gain contrast: {dark_max}"
-        );
+        assert!(dark_max > 100, "the dark tile did not gain contrast: {dark_max}");
     }
 
     #[test]
