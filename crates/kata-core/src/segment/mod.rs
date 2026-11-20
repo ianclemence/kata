@@ -127,7 +127,7 @@ pub fn logits_to_mask(
         for x in 0..width {
             let sx = (x as f32 * scale).floor() as i64;
             let sx = (sx + i64::from(offset_x)).clamp(0, output_size as i64 - 1) as u32;
-            let _ = scaled_w;
+
             let logit = logits[(sy * output_size + sx) as usize];
             let probability = sigmoid(logit);
             mask.set(x, y, (probability * 255.0).round().clamp(0.0, 255.0) as u8);

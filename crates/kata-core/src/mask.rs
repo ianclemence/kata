@@ -444,8 +444,8 @@ pub fn despill(image: &mut RgbaImage, mask: &Mask) {
     let pixels: &mut [u8] = image.as_mut();
     let stride = w as usize;
 
-    for_each_row_mut(pixels, stride, |y, row| {
-        for (x, pixel) in row.iter_mut().enumerate() {
+    for_each_row_mut(pixels, stride * 4, |y, row| {
+        for (x, pixel) in row.chunks_mut(4).enumerate() {
             let alpha = mask.data[y * stride + x];
             if alpha == 0 || alpha == 255 {
                 continue;
@@ -479,7 +479,7 @@ pub fn despill(image: &mut RgbaImage, mask: &Mask) {
                 let n = counts[3] / 255;
                 if n > 0 {
                     for c in 0..3 {
-                        pixel.0[c] = (counts[c] / n).min(255) as u8;
+                        pixel[c] = (counts[c] / n).min(255) as u8;
                     }
                 }
             }

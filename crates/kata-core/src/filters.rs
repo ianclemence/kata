@@ -179,8 +179,8 @@ pub fn bilateral(image: &RgbaImage, radius: u32, sigma_space: f32, sigma_color: 
     let mut out = image.clone();
     let dest: &mut [u8] = out.as_mut();
 
-    for_each_row_mut(dest, stride, |y, row| {
-        for (x, pixel) in row.iter_mut().enumerate() {
+    for_each_row_mut(dest, stride * 4, |y, row| {
+        for (x, pixel) in row.chunks_mut(4).enumerate() {
             let center = gray[y * stride + x];
             let mut acc = [0f32; 3];
             let mut weight_sum = 0f32;
@@ -208,10 +208,10 @@ pub fn bilateral(image: &RgbaImage, radius: u32, sigma_space: f32, sigma_color: 
 
             if weight_sum > 0.0 {
                 for c in 0..3 {
-                    pixel.0[c] = (acc[c] / weight_sum).round().clamp(0.0, 255.0) as u8;
+                    pixel[c] = (acc[c] / weight_sum).round().clamp(0.0, 255.0) as u8;
                 }
             }
-            pixel.0[3] = source[(y * stride + x) * 4 + 3];
+            pixel[3] = source[(y * stride + x) * 4 + 3];
         }
     });
     out

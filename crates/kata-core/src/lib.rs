@@ -14,6 +14,7 @@ pub mod halo;
 pub mod mask;
 pub mod model;
 pub mod parallel;
+pub mod pipeline;
 pub mod posterize;
 pub mod segment;
 pub mod sticker;
