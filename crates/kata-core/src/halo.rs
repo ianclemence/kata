@@ -48,7 +48,8 @@ pub fn composite(subject: &RgbaImage, alpha: &Mask, halo: &Mask, color: Rgba) ->
         if halo_value > 0 {
             backdrop = cream.with_alpha(halo_value);
         }
-        let mut front = Rgba::from(*subject_pixel);        front.a = alpha.data[y * stride + x];
+        let mut front = Rgba::from(*subject_pixel);
+        front.a = alpha.data[y * stride + x];
         *pixel = image::Rgba(over(backdrop, front).to_array());
     }
     out

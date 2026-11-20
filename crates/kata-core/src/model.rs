@@ -93,7 +93,11 @@ pub fn require(id: &str) -> Result<&'static ModelSpec> {
 
 /// The model to use when the person has not chosen one.
 pub fn default_for(gpu: bool) -> &'static ModelSpec {
-    let id = if gpu { DEFAULT_GPU_MODEL } else { DEFAULT_CPU_MODEL };
+    let id = if gpu {
+        DEFAULT_GPU_MODEL
+    } else {
+        DEFAULT_CPU_MODEL
+    };
     by_id(id).expect("the default model ids are in the registry")
 }
 
@@ -144,11 +148,14 @@ pub fn model_dir() -> std::path::PathBuf {
     let base = if cfg!(target_os = "windows") {
         std::env::var_os("LOCALAPPDATA").map(std::path::PathBuf::from)
     } else if cfg!(target_os = "macos") {
-        std::env::var_os("HOME").map(|h| std::path::PathBuf::from(h).join("Library/Application Support"))
+        std::env::var_os("HOME")
+            .map(|h| std::path::PathBuf::from(h).join("Library/Application Support"))
     } else {
         std::env::var_os("XDG_DATA_HOME")
             .map(std::path::PathBuf::from)
-            .or_else(|| std::env::var_os("HOME").map(|h| std::path::PathBuf::from(h).join(".local/share")))
+            .or_else(|| {
+                std::env::var_os("HOME").map(|h| std::path::PathBuf::from(h).join(".local/share"))
+            })
     };
     base.unwrap_or_else(std::env::temp_dir).join("kata/models")
 }

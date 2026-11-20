@@ -42,9 +42,8 @@ impl Rgba {
             )),
             3 => {
                 let n = |i: usize| -> Result<u8> {
-                    let d = u8::from_str_radix(&s[i..i + 1], 16).map_err(|_| {
-                        KataError::Invalid(format!("`{text}` is not a hex colour"))
-                    })?;
+                    let d = u8::from_str_radix(&s[i..i + 1], 16)
+                        .map_err(|_| KataError::Invalid(format!("`{text}` is not a hex colour")))?;
                     Ok(d * 17)
                 };
                 Ok(Rgba::rgb(n(0)?, n(1)?, n(2)?))
@@ -62,7 +61,8 @@ impl Rgba {
     /// Rec. 709 relative-luma lightness, 0..=255. Used to order inks and to
     /// decide which ink a pixel belongs to.
     pub fn luma(&self) -> u8 {
-        let y = 0.2126 * f32::from(self.r) + 0.7152 * f32::from(self.g) + 0.0722 * f32::from(self.b);
+        let y =
+            0.2126 * f32::from(self.r) + 0.7152 * f32::from(self.g) + 0.0722 * f32::from(self.b);
         y.round().clamp(0.0, 255.0) as u8
     }
 

@@ -228,8 +228,8 @@ fn requantise(image: &RgbaImage, palette: &[Rgba]) -> (GrayImage, Vec<Rgba>) {
     let mut index = GrayImage::new(w, h);
     for (x, y, pixel) in image.enumerate_pixels() {
         let p = pixel.0;
-        let value = (2126 * u32::from(p[0]) + 7152 * u32::from(p[1]) + 72 * u32::from(p[2]) + 5000)
-            / 10000;
+        let value =
+            (2126 * u32::from(p[0]) + 7152 * u32::from(p[1]) + 72 * u32::from(p[2]) + 5000) / 10000;
         let mut best = 0usize;
         let mut best_distance = i32::MAX;
         for (i, &ink_luma) in luma.iter().enumerate() {

@@ -199,8 +199,8 @@ pub fn bilateral(image: &RgbaImage, radius: u32, sigma_space: f32, sigma_color: 
                 let dy = ny as i32 - y as i32;
                 for nx in x0..=x1 {
                     let dx = nx as i32 - x as i32;
-                    let spatial_w = spatial
-                        [(dy + radius_i) as usize * side + (dx + radius_i) as usize];
+                    let spatial_w =
+                        spatial[(dy + radius_i) as usize * side + (dx + radius_i) as usize];
                     let diff = i32::from(gray[ny * width as usize + nx]) - i32::from(center);
                     let color_w = color_lut[diff.unsigned_abs() as usize];
                     let weight = spatial_w * color_w;
@@ -311,7 +311,6 @@ pub fn resize(image: &RgbaImage, width: u32, height: u32) -> RgbaImage {
     out
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -356,16 +355,24 @@ mod tests {
         let mut img = GrayImage::new(64, 64);
         for y in 0..64 {
             for x in 0..64 {
-                let v = if x < 32 { 60 + (x % 8) as u8 } else { 190 + (x % 8) as u8 };
+                let v = if x < 32 {
+                    60 + (x % 8) as u8
+                } else {
+                    190 + (x % 8) as u8
+                };
                 img.put_pixel(x, y, Luma([v]));
             }
         }
         let out = clahe(&img, 4, 2.0);
-        let dark_max = (0..32).flat_map(|x| (0..64).map(move |y| (x, y)))
+        let dark_max = (0..32)
+            .flat_map(|x| (0..64).map(move |y| (x, y)))
             .map(|(x, y)| out.get_pixel(x, y).0[0])
             .max()
             .unwrap();
-        assert!(dark_max > 100, "the dark tile did not gain contrast: {dark_max}");
+        assert!(
+            dark_max > 100,
+            "the dark tile did not gain contrast: {dark_max}"
+        );
     }
 
     #[test]

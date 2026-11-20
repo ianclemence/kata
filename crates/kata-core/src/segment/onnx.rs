@@ -8,7 +8,9 @@
 use crate::error::{KataError, Result};
 use crate::mask::Mask;
 use crate::model::ModelSpec;
-use crate::segment::{logits_to_mask, to_tensor_input, Backend, Progress, Segmenter, SegmenterInfo, MODEL_INPUT_SIZE};
+use crate::segment::{
+    logits_to_mask, to_tensor_input, Backend, Progress, Segmenter, SegmenterInfo, MODEL_INPUT_SIZE,
+};
 use image::RgbaImage;
 
 pub struct OnnxSegmenter;
