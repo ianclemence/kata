@@ -423,6 +423,10 @@ dependencies = [
 [[package]]
 name = "kata-web"
 version = "0.1.0"
+dependencies = [
+ "image",
+ "kata-core",
+]
 
 [[package]]
 name = "libc"

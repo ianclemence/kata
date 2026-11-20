@@ -1,6 +1,6 @@
 [package]
 name = "kata-web"
-description = "WebAssembly bindings for Kata, for the browser build."
+description = "Kata's local web UI: the kata-core pipeline served over loopback."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -9,3 +9,11 @@ repository.workspace = true
 
 [lib]
 crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "kata-web"
+path = "src/main.rs"
+
+[dependencies]
+kata-core = { workspace = true }
+image = { workspace = true }
