@@ -488,9 +488,9 @@ pub fn despill(image: &mut RgbaImage, mask: &Mask) {
                 // counts[3] is the sum of the 255 alphas; divide by 255 to get
                 // the number of contributing pixels.
                 let n = counts[3] / 255;
-                if n > 0 {
-                    for c in 0..3 {
-                        pixel[c] = (counts[c] / n).min(255) as u8;
+                for c in 0..3 {
+                    if let Some(v) = counts[c].checked_div(n) {
+                        pixel[c] = v.min(255) as u8;
                     }
                 }
             }

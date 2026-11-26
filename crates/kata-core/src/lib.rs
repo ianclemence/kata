@@ -1,3 +1,7 @@
+// Channel loops (`for c in 0..3`) index two or three buffers at once and read
+// more plainly than zipped iterators; `Rgba::rgba` mirrors CSS's rgba().
+#![allow(clippy::needless_range_loop, clippy::self_named_constructors)]
+
 //! Kata core: the image pipeline, the mask and sticker algorithms, and the
 //! segmentation interface.
 //!
@@ -5,20 +9,28 @@
 //! `wasm32-unknown-unknown` from the same source, so the desktop app, the CLI
 //! and the browser app all run the same maths.
 
+pub mod brand;
 pub mod color;
 pub mod error;
 pub mod export;
 pub mod filters;
 pub mod grain;
 pub mod halo;
+pub mod inspect;
+pub mod lab;
 pub mod mask;
+pub mod matte;
 pub mod model;
+pub mod ops;
 pub mod parallel;
 pub mod pipeline;
 pub mod posterize;
+pub mod print;
 pub mod segment;
 pub mod sticker;
 pub mod style;
+pub mod targets;
+pub mod texture;
 
 pub use color::Rgba;
 pub use error::{KataError, Result};

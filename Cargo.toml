@@ -1,17 +1,23 @@
 [workspace]
 resolver = "2"
-members = ["crates/kata-core", "crates/kata-cli", "crates/kata-web"]
+members = ["crates/kata-core", "crates/kata-engine", "crates/kata-mcp", "crates/kata-cli", "crates/kata-web"]
 exclude = ["crates/kata-app"]
 
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.82"
+rust-version = "1.85"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/OWNER/kata"
+repository = "https://github.com/ianclemence/kata"
+homepage = "https://github.com/ianclemence/kata"
+readme = "README.md"
+keywords = ["background-removal", "mcp", "design", "screen-print", "poster"]
+categories = ["multimedia::images", "command-line-utilities"]
 
 [workspace.dependencies]
 kata-core = { path = "crates/kata-core" }
+kata-engine = { path = "crates/kata-engine" }
+kata-mcp = { path = "crates/kata-mcp" }
 image = { version = "0.25", default-features = false, features = [
   "jpeg",
   "png",

@@ -1,6 +1,6 @@
 [package]
 name = "kata-cli"
-description = "Command-line batch background removal and sticker export for Kata."
+description = "The kata command: cutouts, brand-ink prints, poster composition and review, and an MCP server for agents."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -13,6 +13,11 @@ path = "src/main.rs"
 
 [dependencies]
 kata-core.workspace = true
+kata-engine.workspace = true
+kata-mcp.workspace = true
 image.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+
+[target.'cfg(windows)'.build-dependencies]
+winresource = "0.1"

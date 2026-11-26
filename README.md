@@ -1,99 +1,165 @@
+<p align="center"><img src="assets/kata-256.png" width="128" alt="Kata"></p>
+
 # Kata
 
-Kata takes a photo's background away and writes the cutout as a PNG with a real
-transparent channel. On request it also renders the cutout as a screen-print
-sticker: flat ink colours, a paper-coloured border and an outline so it still
-reads when printed. `kata-core` does the work; the `kata` CLI and a small local
-web app both call it. Nothing leaves your computer.
+**Cut, print, compose and review: an on-device design toolkit for people and agents.**
 
-## Requirements
+Kata takes a photo and gives you a clean cutout of its subject, prints it in
+your brand's inks like a screen print, lays it out as a poster from a JSON
+scene, and reviews the result for the mistakes people notice: type running into
+the picture, a logo that sinks into its background, faces printed black, an
+elbow printed in the ground colour so it vanishes, a scanned paper texture
+putting a fold line through everything.
 
-Rust 1.82 or newer (`rust-version = "1.82"` in the workspace); no model ships.
+It runs on your machine and nothing is uploaded. The same engine works three
+ways: a command-line tool, a local web page, and an
+[MCP](https://modelcontextprotocol.io) server. Claude, Cursor or any MCP client
+can drive the whole workflow, and the design judgement ships with it as
+[skills](skills/).
 
-## CLI
-
-Build with `npm run build:cli` (or `cargo build --package kata-cli --release`);
-the binary is `target/release/kata` (`kata.exe` on Windows).
+*Kata* is Swahili for "cut".
 
 ```
-kata <input> [options]
-
-  -o, --output <path>     Where to write the cutout PNG (default <stem>-cutout.png)
-      --segmenter <kind>  auto (default), luma or onnx
-      --model <path>      Override the ONNX model file path
-      --sticker <path>    Also write a screen-print sticker PNG here
-  -h, --help              Show this help
-  -V, --version           Show the version
+photo ─► segment ─► mask edits ─► print in brand inks ─► compose ─► review ─► export
+         BiRefNet,  explicit,     tonal / spot / line,    JSON scene, collisions, legibility,
+         hints,     undoable      two-layer scenes        resvg       logo size, safe areas
+         cached
 ```
 
-Copy-pasteable example:
+## Install
+
+**Windows:** download `kata-<version>-x86_64-pc-windows-msvc.zip` from
+[Releases](https://github.com/ianclemence/kata/releases), unzip it, and run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File install-windows.ps1
+```
+
+That installs Kata to `%LOCALAPPDATA%\Programs\Kata`, adds `kata` to your PATH,
+puts **Kata** in the Start menu (it opens the local web page), and registers
+an uninstaller in Settings → Apps.
+
+**macOS and Linux:** download the archive for your platform, unpack it, and put
+the folder on your `PATH`. Every archive includes the ONNX Runtime library Kata
+loads.
+
+Then fetch a segmentation model once. Kata checks it against its SHA-256:
 
 ```sh
-cargo run --release --package kata-cli -- photo.jpg -o photo-cutout.png --sticker photo-sticker.png
+kata models download birefnet-lite-fp32     # 224 MB, the fast CPU choice
+kata status                                 # what Kata found
 ```
 
-`auto` uses ONNX if this build can run it and otherwise falls back to the
-lightness split, saying so on stderr. `luma` chooses the lightness split silently.
-`onnx` refuses to guess: it exits with code 2 and prints the model it wanted and
-the path it looked for, so a missing runtime is never mistaken for a result.
+| Model | Size | Notes |
+|---|---|---|
+| `birefnet-lite-fp32` | 224 MB | Fast on any CPU |
+| `birefnet-lite-fp16` | 115 MB | Fast, needs fp16 support |
+| `birefnet-general-fp16` | 490 MB | Best edges, slowest |
 
-The cutout is a PNG; the CLI prints `wrote <path> (<n> bytes, <w>x<h>)`, reading
-the file back for those dimensions.
+Any BiRefNet-style `.onnx` file also works: pass `--model path/to/model.onnx`
+or set `KATA_MODEL=path`.
 
-## Browser UI
+### Build from source
 
-Start the local server with `npm run web` (that runs
-`cargo run --package kata-web --release`). It prints
-`Kata web UI on http://127.0.0.1:8765` and listens on loopback only. Open that
-address. Pass `--port <PORT>` or set `KATA_WEB_PORT` to use another port.
-
-The page has:
-
-- **Dropzone / file picker** — PNG, JPEG, WebP, BMP or TIFF up to 64 MB, picked
-  or dropped. The cutout is requested as soon as a file is chosen.
-- **Use sample image** — fetches a synthetic 480×360 picture from the server so
-  you can try the pipeline without a file of your own.
-- **Screen-print sticker** — checkbox. On: requests the sticker and re-renders
-  the current photo; off: the plain cutout.
-- **Result panel** — before and after on a checkerboard, plus PNG size, pixel
-  dimensions and fully transparent pixel count, measured from the bytes the
-  browser received.
-- **Save the PNG** — downloads the output as `kata-cutout.png` or
-  `kata-sticker.png`.
-
-Core errors come back as text and are shown above the result; a malformed image
-gives a readable message rather than a blank page.
-
-## Tests and release build
+Needs Rust 1.85 or newer.
 
 ```sh
-npm run test          # cargo test --workspace
-npm run build         # cargo build --workspace --release
+cargo build --release -p kata-cli -p kata-web
+python scripts/fetch-onnxruntime.py target/release   # ONNX Runtime beside the binary
 ```
 
-The same by cargo directly:
+## Command line
 
 ```sh
-cargo test --workspace
-cargo build --workspace --release
+# A cutout. In a busy street, tell it where the subject is.
+kata cut matatu.jpg --box 100,615,500,345 -o matatu-cut.png --mask matatu-mask.png
+
+# Print it in brand inks: the street quiet, the matatu loud.
+kata print matatu.jpg --mask matatu-mask.png \
+  --spec examples/print-subject.json --background-spec examples/print-street.json \
+  --ground "#F9ECDD" -o matatu-print.png
+
+# Lay out a poster and review it. Exits with code 1 if the review finds errors.
+kata compose examples/scene.example.json -o poster.png --target ig-portrait
+
+# Checks and helpers
+kata inspect --mask matatu-mask.png
+kata palette logo.png
+kata texture -o paper.png --size 1080x1350
+kata texture --check scanned-paper.png
+kata export poster.png --targets ig-square,ig-story,x-post
 ```
 
-Also: `npm run check`, `npm run fmt`, `npm run fmt:check`, `npm run clippy`. Every
-package script is a cargo command; none changes the machine.
+The first cut of a photo runs the model. After that the mask comes from a cache
+keyed by the image's bytes, the model and the hint, so iterating on a design is
+instant.
 
-## What is not done in this build
+## Agents (MCP)
 
-- **No ONNX inference is compiled in.** The `onnx` feature is off by default, and
-  the `ort` dependency it would pull in is configured with `download-binaries`,
-  which fetches runtime binaries at build time. This build has no matting runtime.
-- **No model ships.** The registry in `kata-core/src/model.rs` records the BiRefNet
-  files, sizes and SHA-256 checksums, but the files are not in the tree.
-- **The default path is the lightness split, not matting.** `--segmenter auto`
-  (the default) and `luma` split the image on lightness and keep the darker
-  subject. That is a threshold: it can clip a light subject, keep a dark
-  background, and gives no soft hair edges. The CLI and the page both say so.
-- **`--segmenter onnx` cannot succeed here.** It reports the missing runtime and
-  expected model path instead of panicking; `--model` only changes where that path
-  is looked up.
-- **There is no WebAssembly build.** The browser UI is a local native server, not
-  code compiled to wasm; the page talks to it over HTTP on 127.0.0.1.
+```sh
+claude mcp add kata -- kata mcp --allow "$PWD"
+```
+
+For Claude Desktop, Cursor and other clients, see [docs/mcp.md](docs/mcp.md).
+
+There are 13 tools: `kata_status`, `kata_models_download`, `kata_segment`,
+`kata_refine_mask`, `kata_cutout`, `kata_print`, `kata_palette`, `kata_brand`,
+`kata_texture`, `kata_compose`, `kata_inspect`, `kata_view` and `kata_export`.
+
+- Every output gets a short id (`art_3_cutout`) that later calls can use
+  instead of a path.
+- `kata_view` lets the agent zoom into any region, boost contrast to find
+  hidden lines, or show transparency on a checkerboard. Looking closely is the
+  step that matters most in design.
+- The five skills are also served as resources, along with an example brand
+  file and scene. There is one prompt, `poster`.
+
+## Skills
+
+[`skills/`](skills/) holds the workflow as
+[Agent Skills](https://docs.claude.com/en/docs/agents-and-tools/agent-skills):
+
+- **kata-poster**: from brief to posting plan. One concept per poster, copy in
+  the audience's own words, layout, logo rules, series and cadence.
+- **kata-cutout**: trust the model's mask, and edit only what is wrong.
+- **kata-print**: choosing inks by role, tonal or spot, faces that stay readable.
+- **kata-review**: every check, what it means, and what to look at yourself.
+- **kata-brand**: building `brand.json` from an app's theme, a logo and past designs.
+
+To use them without the MCP server, copy them into `.claude/skills/` (or your
+agent's skills folder). Brand specifics live in a brand file, not in the
+skills, so one Kata serves every project. See
+[examples/brand.example.json](examples/brand.example.json).
+
+## Documentation
+
+- [docs/mcp.md](docs/mcp.md): connecting agents, the tools, files and safety
+- [docs/scene.md](docs/scene.md): the poster scene format and the review
+- [docs/mask-ops.md](docs/mask-ops.md): hints and mask edits
+- [docs/print.md](docs/print.md): print specs
+
+## How it's built
+
+| Crate | What it is |
+|---|---|
+| `kata-core` | The algorithms: masks and edits, guided-filter matting, Lab colour, tonal and spot printing, line plates, paper, crease detection, inspections, export targets. No I/O; builds for WebAssembly. |
+| `kata-engine` | ONNX Runtime (loaded at run time), checked model downloads, the mask cache, scene composition with resvg, and the review. |
+| `kata-mcp` | The MCP server: tools, resources, prompts, path sandbox and artifact ids. |
+| `kata-cli` | The `kata` binary. |
+| `kata-web` | A local web page for quick cutouts, served on loopback only. |
+
+Kata looks for ONNX Runtime in this order: `KATA_ORT_DYLIB`, `ORT_DYLIB_PATH`,
+next to the `kata` binary, a `lib/` folder beside it, then Kata's data folder.
+`kata status` prints every path it tried.
+
+## Privacy and safety
+
+- Images never leave your machine. The only network access is downloading a
+  model you ask for, which is checked against the publisher's SHA-256.
+- The MCP server reads and writes only inside its work folder and the folders
+  you pass with `--allow`.
+- The models (BiRefNet) are MIT licensed.
+
+## Licence
+
+Dual-licensed under [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your option.

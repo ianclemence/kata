@@ -1,0 +1,16 @@
+[package]
+name = "kata-mcp"
+description = "Kata as an MCP server: cut, print, inspect and compose tools for any agent."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+kata-core = { workspace = true }
+kata-engine = { workspace = true }
+image = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+base64 = "0.22"

@@ -56,20 +56,15 @@ impl HaloStyle {
 
 /// The ink sets. Every ramp is ordered dark to light and stays in the warm
 /// paper-and-ink family.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Palette {
+    #[default]
     AfroRetro,
     Riso,
     Seventies,
     Mono,
     Custom(Vec<Rgba>),
-}
-
-impl Default for Palette {
-    fn default() -> Self {
-        Palette::AfroRetro
-    }
 }
 
 impl Palette {
@@ -171,8 +166,10 @@ impl Palette {
             "70s" | "70" | "seventies" | "seventy" => Ok(Palette::Seventies),
             "mono" | "monochrome" | "gray" | "grey" => Ok(Palette::Mono),
             _ => {
-                let inks: Result<Vec<Rgba>> =
-                    text.split(',').map(|part| Rgba::from_hex(part.trim())).collect();
+                let inks: Result<Vec<Rgba>> = text
+                    .split(',')
+                    .map(|part| Rgba::from_hex(part.trim()))
+                    .collect();
                 let inks = inks?;
                 if inks.len() < 2 {
                     return Err(KataError::Invalid(
@@ -263,7 +260,9 @@ impl StickerStyle {
         }
         self.palette_inks().map(|_| ())?;
         if self.halo.width < 0.0 {
-            return Err(KataError::Invalid("the halo width cannot be negative".into()));
+            return Err(KataError::Invalid(
+                "the halo width cannot be negative".into(),
+            ));
         }
         if !self.highlight_clip.is_finite() || !(0.0..=0.2).contains(&self.highlight_clip) {
             return Err(KataError::Invalid(

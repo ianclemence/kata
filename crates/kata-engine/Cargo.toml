@@ -1,0 +1,22 @@
+[package]
+name = "kata-engine"
+description = "The native half of Kata: ONNX Runtime segmentation, model downloads, the mask cache and poster composition."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+kata-core = { workspace = true }
+image = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+ort = { version = "=2.0.0-rc.15", default-features = false, features = ["std", "ndarray", "load-dynamic", "half", "api-20"] }
+half = "2"
+ndarray = "0.17"
+resvg = "0.50"
+ureq = "3"
+base64 = "0.22"

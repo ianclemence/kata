@@ -8,3 +8,9 @@ node_modules
 .DS_Store
 Thumbs.db
 /tests/golden/**/*.out.png
+
+# devd agent workspaces and scratch
+/.devd/
+/.devd-tmp/
+# local test outputs
+*.review/

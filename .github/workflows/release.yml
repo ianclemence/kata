@@ -1,0 +1,125 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to build and publish (e.g. v0.1.0)"
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+  ORT_VERSION: "1.32.0"
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, target: x86_64-pc-windows-msvc, archive: zip }
+          - { os: ubuntu-22.04, target: x86_64-unknown-linux-gnu, archive: tar.gz }
+          - { os: ubuntu-22.04-arm, target: aarch64-unknown-linux-gnu, archive: tar.gz }
+          - { os: macos-14, target: aarch64-apple-darwin, archive: tar.gz }
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Test
+        run: cargo test --workspace --target ${{ matrix.target }}
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }} -p kata-cli -p kata-web
+
+      - name: Package
+        id: package
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          NAME="kata-${TAG}-${{ matrix.target }}"
+          DIR="dist/${NAME}"
+          mkdir -p "$DIR"
+          EXE=""
+          if [[ "${{ matrix.target }}" == *windows* ]]; then EXE=".exe"; fi
+          cp "target/${{ matrix.target }}/release/kata${EXE}" "$DIR/"
+          cp "target/${{ matrix.target }}/release/kata-web${EXE}" "$DIR/"
+          python scripts/fetch-onnxruntime.py "$DIR" --version "$ORT_VERSION"
+          cp -r skills examples docs README.md CHANGELOG.md LICENSE-MIT LICENSE-APACHE "$DIR/"
+          cp assets/kata.ico assets/kata.png "$DIR/"
+          if [[ "${{ matrix.target }}" == *windows* ]]; then
+            cp scripts/install-windows.ps1 scripts/uninstall-windows.ps1 "$DIR/"
+          fi
+          # Smoke test: the packaged binary finds the bundled runtime and loads it.
+          "$DIR/kata${EXE}" status | tee status.txt
+          ! grep -q "not found" status.txt
+          cd dist
+          if [[ "${{ matrix.archive }}" == "zip" ]]; then
+            7z a -tzip "${NAME}.zip" "${NAME}" > /dev/null
+            echo "file=dist/${NAME}.zip" >> "$GITHUB_OUTPUT"
+          else
+            tar -czf "${NAME}.tar.gz" "${NAME}"
+            echo "file=dist/${NAME}.tar.gz" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: ${{ steps.package.outputs.file }}
+          if-no-files-found: error
+
+  publish:
+    name: Publish release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: Checksums
+        run: |
+          cd artifacts
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+      - name: Release notes from the changelog
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          VERSION="${TAG#v}"
+          awk -v v="$VERSION" '
+            $0 ~ "^## \\[?"v"\\]?" {on=1; next}
+            on && /^## / {exit}
+            on {print}
+          ' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then echo "Kata ${TAG}" > notes.md; fi
+          cat notes.md
+      - name: Create or update the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release upload "$TAG" artifacts/* --clobber
+          else
+            gh release create "$TAG" artifacts/* --title "Kata ${TAG}" --notes-file notes.md
+          fi

@@ -233,11 +233,21 @@ fn handle_request(reader: &mut BufReader<TcpStream>) -> Result<(), Failure> {
                 )
             })?;
 
-            let segmenter = LumaSegmenter::default();
+            // The real model when this machine has one; the lightness split otherwise
+            // (it keeps the page usable for a first look, and says so in a header).
+            let model = kata_engine::models::resolve(None)
+                .ok()
+                .filter(|_| kata_engine::runtime::environment().is_ok())
+                .and_then(|r| kata_engine::cut::segmenter(&r).ok());
+            let luma = LumaSegmenter::default();
+            let segmenter: &dyn kata_core::segment::Segmenter = match &model {
+                Some(m) => m.as_ref(),
+                None => &luma,
+            };
             let result = if path == "/sticker" {
-                pipeline::sticker_png(&body, &segmenter)
+                pipeline::sticker_png(&body, segmenter)
             } else {
-                pipeline::cutout_png(&body, &segmenter)
+                pipeline::cutout_png(&body, segmenter)
             };
             match result {
                 Ok(png) => send(reader.get_mut(), "200 OK", "image/png", &png),
@@ -254,7 +264,7 @@ fn handle_request(reader: &mut BufReader<TcpStream>) -> Result<(), Failure> {
 }
 
 fn trim_eol(line: &str) -> &str {
-    line.trim_end_matches(|c| c == '\r' || c == '\n')
+    line.trim_end_matches(['\r', '\n'])
 }
 
 fn send(

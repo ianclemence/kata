@@ -12,13 +12,6 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 default = []
-# Native ONNX Runtime inference (desktop). Never enabled for wasm.
-onnx = ["dep:ort"]
-# Enables the extra runtime GPU providers. `directml` on Windows, `coreml` on
-# macOS, `cuda` on Linux. Exactly one may be active; they are chosen per target.
-gpu-directml = ["onnx", "ort/directml"]
-gpu-coreml = ["onnx", "ort/coreml"]
-gpu-cuda = ["onnx", "ort/cuda"]
 # Web: threads need a nightly standard library and atomics; off by default so a
 # plain `cargo build --target wasm32-unknown-unknown` works on stable.
 wasm-threads = ["dep:wasm-bindgen-rayon"]
@@ -33,13 +26,6 @@ hex = { workspace = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 rayon = { workspace = true }
-ort = { version = "2.0.0-rc.15", optional = true, default-features = false, features = [
-    "std",
-    "ndarray",
-    "download-binaries",
-    "copy-dylibs",
-    "tls-native",
-] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = "0.2"

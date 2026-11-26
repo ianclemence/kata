@@ -1,0 +1,32 @@
+{
+  "name": "Example Studio",
+  "inks": [
+    { "name": "night", "hex": "#0A0A0D", "role": "ground" },
+    { "name": "ink", "hex": "#2A1308", "role": "ink" },
+    { "name": "cream", "hex": "#F9ECDD", "role": "paper" },
+    { "name": "coral", "hex": "#F85647", "role": "accent" },
+    { "name": "peach", "hex": "#FBD4C0", "role": "accent" },
+    { "name": "mustard", "hex": "#FBB438", "role": "accent" },
+    { "name": "green", "hex": "#6DB360", "role": "accent" },
+    { "name": "mint", "hex": "#CFE5D2", "role": "accent" },
+    { "name": "gold", "hex": "#F5C518", "role": "action" }
+  ],
+  "fonts": {
+    "files": {},
+    "display": "Anton",
+    "body": "Sora",
+    "mono": "IBM Plex Mono"
+  },
+  "logos": {
+    "full": "logo.png",
+    "mono_above_luma": 140,
+    "min_width": 0.1,
+    "max_width": 0.22
+  },
+  "voice": [
+    "Talk like friends planning the weekend, not like a brand.",
+    "Use local words where people really use them, spelled the local way.",
+    "One message per poster. The deck says what the product does for the reader."
+  ],
+  "website": "example.com"
+}

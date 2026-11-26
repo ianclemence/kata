@@ -5,8 +5,6 @@
 //! Runtime Web through `wasm-bindgen`. Both hand back the same [`Mask`], so the
 //! refine panel, the style pass and the export path are identical.
 
-pub mod onnx;
-
 use crate::error::{KataError, Result};
 use crate::mask::Mask;
 use image::RgbaImage;
@@ -165,10 +163,18 @@ impl Segmenter for LumaSegmenter {
         let luma = crate::filters::to_luma(image);
         let (width, height) = luma.dimensions();
         let mut mask = Mask::new(width, height, 0);
-        let cut = if self.threshold == 0 { 128 } else { self.threshold };
+        let cut = if self.threshold == 0 {
+            128
+        } else {
+            self.threshold
+        };
         for y in 0..height {
             for x in 0..width {
-                let value = if luma.get_pixel(x, y).0[0] < cut { 255 } else { 0 };
+                let value = if luma.get_pixel(x, y).0[0] < cut {
+                    255
+                } else {
+                    0
+                };
                 mask.set(x, y, value);
             }
         }

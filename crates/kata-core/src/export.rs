@@ -375,13 +375,24 @@ mod tests {
 
     #[test]
     fn pattern_expands_its_tokens() {
-        let name = expand_pattern("{name}-{index}-{style}-{inks}ink", "portrait", 7, "afro", 4, 10, 10);
+        let name = expand_pattern(
+            "{name}-{index}-{style}-{inks}ink",
+            "portrait",
+            7,
+            "afro",
+            4,
+            10,
+            10,
+        );
         assert_eq!(name, "portrait-007-afro-4ink");
     }
 
     #[test]
     fn an_empty_pattern_falls_back_to_the_name() {
-        assert_eq!(expand_pattern("{nope}", "beach", 0, "riso", 3, 1, 1), "{nope}");
+        assert_eq!(
+            expand_pattern("{nope}", "beach", 0, "riso", 3, 1, 1),
+            "{nope}"
+        );
         assert_eq!(expand_pattern("   ", "beach", 0, "riso", 3, 1, 1), "beach");
     }
 

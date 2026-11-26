@@ -1,0 +1,13 @@
+{
+  "width": 1080,
+  "height": 1350,
+  "background": "#F85647",
+  "fonts": [],
+  "layers": [
+    { "type": "text", "id": "label", "text": "Issue 01 · Friday", "x": 64, "y": 70, "font": "Sora", "size": 20, "weight": 600, "color": "#2A1308", "letter_spacing": 4, "uppercase": true },
+    { "type": "text", "id": "headline", "text": "Friday,\nsorted.", "x": 64, "y": 900, "font": "Anton", "size": 150, "color": "#2A1308", "uppercase": true, "line_height": 0.9 },
+    { "type": "text", "id": "deck", "text": "Find the spot.\nBring the crew.", "x": 64, "y": 1160, "font": "Sora", "size": 30, "color": "#2A1308", "line_height": 1.4 },
+    { "type": "burst", "id": "sticker", "cx": 900, "cy": 220, "size": 220, "fill": "#F5C518", "text": "Coming\nsoon", "color": "#0A0A0D", "rotate": -10 }
+  ],
+  "finish": { "paper": 0.8, "seed": 7, "halftone": 0.1, "halftone_cell": 6.6 }
+}
