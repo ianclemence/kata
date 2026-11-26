@@ -285,7 +285,14 @@
       <input class="visually-hidden" id="file" type="file" accept="image/*">
     </label>
 
-    <p class="hint">No model file is bundled with this build: the server uses Kata's lightness segmenter, which keeps the darker subject. It is honest about being a split, not a matting model.</p>
+    <p class="hint" id="engine">Checking which segmenter this server uses…</p>
+    <script>
+      fetch("/status").then(r => r.json()).then(s => {
+        document.getElementById("engine").textContent = s.model
+          ? "Segmenting with " + s.model + " on this computer."
+          : "No model is installed, so the server uses the lightness split (not a matting model). Run `kata models download birefnet-lite-fp32` for real cutouts.";
+      }).catch(() => {});
+    </script>
 
     <div class="controls">
       <button id="sample" type="button">Use sample image</button>

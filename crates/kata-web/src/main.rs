@@ -212,6 +212,20 @@ fn handle_request(reader: &mut BufReader<TcpStream>) -> Result<(), Failure> {
             PAGE.as_bytes(),
         ),
         ("GET", "/sample.png") => send(reader.get_mut(), "200 OK", "image/png", &sample_png()),
+        ("GET", "/status") => {
+            let model = kata_engine::models::resolve(None)
+                .ok()
+                .filter(|_| kata_engine::runtime::environment().is_ok())
+                .map(|r| r.name);
+            let body = serde_json::json!({"model": model, "version": env!("CARGO_PKG_VERSION")})
+                .to_string();
+            send(
+                reader.get_mut(),
+                "200 OK",
+                "application/json",
+                body.as_bytes(),
+            )
+        }
         ("POST", "/cutout") | ("POST", "/sticker") => {
             let length = content_length.ok_or_else(|| {
                 fail(
