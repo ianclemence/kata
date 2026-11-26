@@ -18,7 +18,7 @@ foreach ($item in @("kata.exe", "kata-web.exe", "onnxruntime.dll", "onnxruntime_
     $from = Join-Path $Source $item
     if (Test-Path $from) { Copy-Item $from $Target -Force }
 }
-foreach ($folder in @("skills", "examples", "docs")) {
+foreach ($folder in @("skills", "examples", "docs", "assets")) {
     $from = Join-Path $Source $folder
     if (Test-Path $from) { Copy-Item $from $Target -Recurse -Force }
 }

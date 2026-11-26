@@ -64,6 +64,7 @@ jobs:
           python scripts/fetch-onnxruntime.py "$DIR" --version "$ORT_VERSION"
           cp -r skills examples docs README.md CHANGELOG.md LICENSE-MIT LICENSE-APACHE "$DIR/"
           cp assets/kata.ico assets/kata.png "$DIR/"
+          mkdir -p "$DIR/assets" && cp -r assets/fonts "$DIR/assets/"
           if [[ "${{ matrix.target }}" == *windows* ]]; then
             cp scripts/install-windows.ps1 scripts/uninstall-windows.ps1 "$DIR/"
           fi
