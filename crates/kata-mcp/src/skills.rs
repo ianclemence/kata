@@ -117,6 +117,8 @@ mod tests {
     #[test]
     fn skills_have_frontmatter_with_name_and_description() {
         for (name, _, body) in SKILLS {
+            // A Windows checkout may have CRLF line endings.
+            let body = body.replace("\r\n", "\n");
             assert!(body.starts_with("---\n"), "{name}");
             assert!(body.contains(&format!("name: {name}\n")), "{name}");
             assert!(body.contains("\ndescription: "), "{name}");
