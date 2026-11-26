@@ -268,15 +268,25 @@ mod tests {
 
     #[test]
     fn a_coral_logo_on_coral_and_colliding_text_are_caught() {
-        let scene: Scene = serde_json::from_str(
+        // The bundled font, so the test does not depend on what fonts a machine has.
+        let mut scene: Scene = serde_json::from_str(
             r##"{"width":300,"height":200,"background":"#F05A47","layers":[
                 {"type":"rect","id":"logo-plate","x":10,"y":10,"w":60,"h":20,"fill":"#F25C49"},
-                {"type":"text","id":"headline","text":"HELLO","x":10,"y":120,"font":"Arial","size":60,"color":"#F9ECDD"},
-                {"type":"text","id":"deck","text":"overlapping","x":20,"y":110,"font":"Arial","size":30,"color":"#F9ECDD"}
+                {"type":"text","id":"headline","text":"HELLO","x":10,"y":120,"font":"Sora","size":60,"color":"#F9ECDD"},
+                {"type":"text","id":"deck","text":"overlapping","x":20,"y":110,"font":"Sora","size":30,"color":"#F9ECDD"}
             ]}"##,
         )
         .unwrap();
+        scene.fonts = vec![concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../assets/fonts/Sora-SemiBold.ttf"
+        )
+        .into()];
         let rendered = render(&scene).unwrap();
+        assert!(
+            rendered.placed.iter().any(|p| p.id == "headline"),
+            "the text did not render"
+        );
         let review = review(&rendered, None, None);
         assert!(
             review.findings.iter().any(|f| f.check == "text_overlap"),
