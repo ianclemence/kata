@@ -82,7 +82,7 @@ fn open_browser(url: &str) {
 }
 
 fn usage() -> &'static str {
-    "Kata web UI — the kata-core pipeline in a browser, on 127.0.0.1 only.
+    "Kata in your browser. Opens a page on this computer only (127.0.0.1).
 
 Usage: kata-web [--port <PORT>] [--open]
 
@@ -240,6 +240,12 @@ fn handle_request(reader: &mut BufReader<TcpStream>) -> Result<(), Failure> {
             PAGE.as_bytes(),
         ),
         ("GET", "/sample.png") => send(reader.get_mut(), "200 OK", "image/png", &sample_png()),
+        ("GET", "/logo.png") => send(
+            reader.get_mut(),
+            "200 OK",
+            "image/png",
+            include_bytes!("../../../assets/kata-256.png"),
+        ),
         ("GET", "/status") => {
             let model = kata_engine::models::resolve(None)
                 .ok()

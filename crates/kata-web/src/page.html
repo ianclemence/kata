@@ -3,590 +3,298 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kata — remove a background, make a sticker</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2317161a'/%3E%3Ccircle cx='16' cy='13' r='5' fill='%23f5f1e8'/%3E%3Cpath d='M5 30c0-7 5-11 11-11s11 4 11 11z' fill='%23d6472a'/%3E%3C/svg%3E">
+<title>Kata</title>
+<link rel="icon" href="/logo.png">
 <style>
   :root {
-    --paper: #f5f1e8;
-    --card: #fffdf8;
-    --ink: #17161a;
-    --muted: #5d5a58;
-    --line: #d9d3c6;
-    --accent: #b8331b;
-    --accent-ink: #ffffff;
-    --focus: #1f5fd1;
-    --error: #8c1d0c;
-    --error-bg: #fbe7e2;
-    --radius: 10px;
-    color-scheme: light;
+    --ground: #141019;
+    --panel: #1d1824;
+    --panel-2: #262030;
+    --line: #342c3f;
+    --cream: #f9ecdd;
+    --muted: #b9aebf;
+    --coral: #f85647;
+    --gold: #f5c518;
+    --radius: 18px;
+    color-scheme: dark;
   }
-
   * { box-sizing: border-box; }
-
   body {
     margin: 0;
-    background: var(--paper);
-    color: var(--ink);
-    font: 16px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--ground);
+    color: var(--cream);
+    font: 16px/1.5 "Segoe UI Variable Text", "Segoe UI", ui-sans-serif, system-ui, -apple-system, Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
+  :focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; border-radius: 8px; }
+  .visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
-  .visually-hidden {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    padding: 0;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-    border: 0;
+  .app { max-width: 1180px; margin: 0 auto; padding: 28px 28px 48px; display: grid; gap: 26px; }
+
+  header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
+  .brand img { width: 40px; height: 40px; border-radius: 10px; }
+  .brand b { font-size: 20px; }
+  .pill { display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+  .pill i { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .pill.ok i { background: #6db360; }
+  .pill.warn i { background: var(--gold); }
+
+  .hero h1 { margin: 0; font-size: clamp(30px, 4.6vw, 52px); line-height: 1.04; letter-spacing: -.025em; font-weight: 750; }
+  .hero h1 em { font-style: normal; color: var(--coral); }
+  .hero p { margin: 12px 0 0; color: var(--muted); max-width: 56ch; font-size: 17px; }
+
+  .setup { display: none; padding: 16px 18px; border-radius: 14px; background: #2a2210; border: 1px solid #5b4a12; color: #f6dfa0; }
+  .setup code { background: #00000055; padding: 2px 7px; border-radius: 6px; color: var(--cream); }
+  .setup.show { display: block; }
+
+  .work { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 22px; }
+  @media (max-width: 860px) { .work { grid-template-columns: minmax(0, 1fr); } }
+
+  .drop {
+    position: relative; display: grid; place-items: center; align-content: center; text-align: center; gap: 12px;
+    min-height: 440px; padding: 28px; border-radius: var(--radius);
+    background: var(--panel); border: 2px dashed var(--line); cursor: pointer; overflow: hidden;
+    transition: border-color .15s ease, background-color .15s ease, transform .15s ease;
   }
-
-  :focus-visible {
-    outline: 3px solid var(--focus);
-    outline-offset: 3px;
-  }
-
-  header {
-    max-width: 1120px;
-    margin: 0 auto;
-    padding: 40px 24px 8px;
-  }
-
-  .mark {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-    font-size: 13px;
-  }
-
-  .mark::before {
-    content: "";
-    width: 14px;
-    height: 14px;
-    border-radius: 3px;
-    background: var(--accent);
-  }
-
-  h1 {
-    margin: 8px 0 6px;
-    font-size: clamp(28px, 4vw, 40px);
-    line-height: 1.1;
-    letter-spacing: -0.02em;
-  }
-
-  header p {
-    margin: 0;
-    max-width: 60ch;
-    color: var(--muted);
-  }
-
-  main {
-    max-width: 1120px;
-    margin: 0 auto;
-    padding: 16px 24px 56px;
-    display: grid;
-    gap: 20px;
-  }
-
-  section.panel {
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    padding: 22px;
-  }
-
-  h2 {
-    margin: 0 0 14px;
-    font-size: 13px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-
-  .dropzone {
-    display: grid;
-    gap: 4px;
-    justify-items: center;
-    text-align: center;
-    padding: 30px 20px;
-    border: 2px dashed var(--line);
-    border-radius: var(--radius);
-    background: #fbf8f0;
-    cursor: pointer;
-    transition: border-color 120ms ease, background-color 120ms ease;
-  }
-
-  .dropzone:hover { border-color: var(--muted); }
-  .dropzone:focus-within { outline: 3px solid var(--focus); outline-offset: 3px; }
-  .dropzone.is-dragging { border-color: var(--accent); background: #fdf0ea; }
-  .dropzone.is-busy { cursor: progress; }
-
-  .dz-title { font-weight: 600; }
-  .dz-hint { font-size: 14px; color: var(--muted); }
-
-  .hint {
-    margin: 12px 0 0;
-    font-size: 14px;
-    color: var(--muted);
-  }
-
-  .controls {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 14px 22px;
-    margin-top: 18px;
-  }
-
-  button,
-  .button {
-    font: inherit;
-    font-weight: 600;
-    padding: 10px 18px;
-    border-radius: 8px;
-    border: 1px solid var(--ink);
-    background: var(--ink);
-    color: var(--paper);
-    cursor: pointer;
-    text-decoration: none;
-    display: inline-block;
-  }
-
-  button.quiet,
-  .button.quiet {
-    background: transparent;
-    color: var(--ink);
-    border-color: var(--line);
-  }
-
-  button:hover:not(:disabled),
-  .button:hover { opacity: 0.88; }
-
-  button:disabled {
-    opacity: 0.55;
-    cursor: progress;
-  }
-
-  .switch {
-    display: inline-flex;
-    align-items: center;
-    gap: 9px;
-    cursor: pointer;
-    padding: 6px 2px;
-  }
-
-  .switch input {
-    width: 18px;
-    height: 18px;
-    accent-color: var(--accent);
-    cursor: pointer;
-  }
-
-  .status {
-    margin: 0 0 14px;
-    color: var(--muted);
-  }
-
-  .stage {
-    display: grid;
-    gap: 18px;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  @media (max-width: 720px) {
-    .stage { grid-template-columns: minmax(0, 1fr); }
-  }
-
-  figure { margin: 0; }
-
-  figcaption {
-    margin-bottom: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-
-  .frame {
-    position: relative;
-    display: grid;
-    place-items: center;
-    min-height: 240px;
-    padding: 10px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    background-color: #ffffff;
-    background-image: repeating-conic-gradient(#e9e5dc 0% 25%, #ffffff 0% 50%);
-    background-size: 18px 18px;
-    overflow: hidden;
-  }
-
-  .frame img {
-    display: block;
-    max-width: 100%;
-    max-height: 420px;
-    height: auto;
-  }
-
-  .frame .placeholder {
-    font-size: 14px;
-    color: var(--muted);
-    text-align: center;
-    background: rgba(255, 253, 248, 0.9);
-    padding: 2px 8px;
-    border-radius: 4px;
-  }
-
-  .stats {
-    margin: 16px 0 0;
-    padding: 12px 14px;
-    border-left: 3px solid var(--line);
-    font-variant-numeric: tabular-nums;
-    color: var(--ink);
-  }
-
-  .stats.is-result { border-left-color: var(--accent); }
-
-  .error {
-    margin: 0 0 14px;
-    padding: 12px 14px;
-    border: 1px solid #e3b3a8;
-    border-left: 4px solid var(--error);
-    border-radius: 6px;
-    background: var(--error-bg);
-    color: var(--error);
-    white-space: pre-wrap;
-  }
-
-  .footer-actions { margin-top: 16px; }
-
+  .drop:hover { border-color: #5a4d68; }
+  .drop.dragging { border-color: var(--coral); background: #2a1c22; transform: scale(1.01); }
+  .drop.busy { cursor: progress; }
+  .drop .icon { width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center; background: var(--panel-2); }
+  .drop .icon svg { width: 30px; height: 30px; }
+  .drop strong { font-size: 19px; }
+  .drop .hint { color: var(--muted); font-size: 14px; }
+  .drop img.original { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; padding: 18px; background: var(--panel); }
+  .drop .swap { position: absolute; left: 14px; bottom: 14px; z-index: 2; font-size: 13px; padding: 7px 12px; border-radius: 999px; background: #000000aa; color: var(--cream); }
   [hidden] { display: none !important; }
+
+  .result { display: grid; grid-template-rows: 1fr auto; border-radius: var(--radius); background: var(--panel); border: 1px solid var(--line); overflow: hidden; min-height: 440px; }
+  .canvas { position: relative; display: grid; place-items: center; padding: 22px; transition: background .2s ease; }
+  .canvas.checker { background: repeating-conic-gradient(#2b2433 0% 25%, #221c29 0% 50%) 0 0 / 22px 22px; }
+  .canvas.cream { background: var(--cream); }
+  .canvas.coral { background: var(--coral); }
+  .canvas.night { background: #07060a; }
+  .canvas img { max-width: 100%; max-height: 520px; filter: drop-shadow(0 10px 28px #0006); }
+  .empty { color: var(--muted); text-align: center; display: grid; gap: 14px; justify-items: center; }
+  .working { position: absolute; inset: 0; display: none; place-items: center; text-align: center; background: #14101999; backdrop-filter: blur(3px); }
+  .working.show { display: grid; }
+  .spinner { width: 46px; height: 46px; margin: 0 auto; border-radius: 50%; border: 4px solid #ffffff22; border-top-color: var(--coral); animation: spin .8s linear infinite; }
+  .working p { margin: 14px 0 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-top: 1px solid var(--line); background: #191520; }
+  .group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .label { font-size: 13px; color: var(--muted); margin-right: 4px; }
+  .swatch { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--line); cursor: pointer; padding: 0; }
+  .swatch[aria-pressed="true"] { border-color: var(--cream); box-shadow: 0 0 0 2px var(--ground) inset; }
+  .swatch.checker { background: repeating-conic-gradient(#5a4f66 0% 25%, #2b2433 0% 50%) 0 0 / 10px 10px; }
+  .swatch.cream { background: var(--cream); }
+  .swatch.coral { background: var(--coral); }
+  .swatch.night { background: #07060a; }
+
+  .toggle { display: inline-flex; padding: 4px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--line); }
+  .toggle button { font: inherit; font-size: 14px; border: 0; background: transparent; color: var(--muted); padding: 7px 14px; border-radius: 999px; cursor: pointer; }
+  .toggle button[aria-pressed="true"] { background: var(--cream); color: var(--ground); font-weight: 650; }
+
+  .btn { font: inherit; font-weight: 650; display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; border-radius: 12px; border: 0; cursor: pointer; text-decoration: none; }
+  .btn.primary { background: var(--coral); color: #fff; }
+  .btn.primary:hover { background: #ff6a5b; }
+  .btn.ghost { background: transparent; color: var(--cream); border: 1px solid var(--line); }
+  .btn.ghost:hover { border-color: #5a4d68; }
+  .btn[aria-disabled="true"] { opacity: .45; pointer-events: none; }
+  .btn:disabled { opacity: .5; cursor: progress; }
+
+  .note { margin: 0; font-size: 14px; color: var(--muted); min-height: 1.5em; }
+  .error { margin: 0; padding: 14px 16px; border-radius: 12px; background: #3a1414; border: 1px solid #7a2a24; color: #ffd2cc; }
+
+  footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 13px; }
+  footer a { color: var(--muted); }
 </style>
 </head>
 <body>
-<header>
-  <span class="mark">Kata</span>
-  <h1>Remove a background. Keep a sticker.</h1>
-  <p>The same Rust pipeline the CLI runs, served from a local server on 127.0.0.1. Your photos never leave this computer.</p>
-</header>
+<div class="app">
+  <header>
+    <a class="brand" href="/"><img src="/logo.png" alt=""><b>Kata</b></a>
+    <span class="pill" id="state"><i></i><span>Getting ready…</span></span>
+  </header>
 
-<main>
-  <section class="panel" aria-labelledby="picker-title">
-    <h2 id="picker-title">1 · Choose a photo</h2>
+  <section class="hero">
+    <h1>Cut it out. <em>Keep the moment.</em></h1>
+    <p>Drop in a photo and Kata lifts the people or things out of it, ready for posters, stickers and posts. Everything happens on this computer.</p>
+  </section>
 
-    <label class="dropzone" id="dropzone" for="file">
-      <span class="dz-title">Drop a photo here, or press Enter to browse</span>
-      <span class="dz-hint">PNG, JPEG, WebP, BMP or TIFF · up to 64 MB</span>
+  <div class="setup" id="setup" role="status">
+    One more step for sharp cutouts: open a terminal, run <code>kata models download birefnet-lite-fp32</code>, then reload this page. Until then, cutouts are rough.
+  </div>
+
+  <p class="error" id="error" role="alert" hidden></p>
+
+  <div class="work">
+    <label class="drop" id="drop" for="file">
+      <div class="icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#f9ecdd" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+      </div>
+      <strong>Drop a photo here</strong>
+      <span class="hint">or click to choose one, or paste with Ctrl+V</span>
+      <img class="original" id="original" alt="" hidden>
+      <span class="swap" id="swap" hidden>Click or drop to use another photo</span>
       <input class="visually-hidden" id="file" type="file" accept="image/*">
     </label>
 
-    <p class="hint" id="engine">Checking which segmenter this server uses…</p>
-    <script>
-      fetch("/status").then(r => r.json()).then(s => {
-        document.getElementById("engine").textContent = s.model
-          ? "Segmenting with " + s.model + " on this computer."
-          : "No model is installed, so the server uses the lightness split (not a matting model). Run `kata models download birefnet-lite-fp32` for real cutouts.";
-      }).catch(() => {});
-    </script>
-
-    <div class="controls">
-      <button id="sample" type="button">Use sample image</button>
-      <label class="switch" for="sticker">
-        <input id="sticker" type="checkbox">
-        <span>Screen-print sticker</span>
-      </label>
-    </div>
-  </section>
-
-  <section class="panel" id="stage" aria-labelledby="stage-title">
-    <h2 id="stage-title">2 · Original and result</h2>
-
-    <p id="status" class="status" role="status">No photo yet. Choose one, drop one, or use the sample.</p>
-    <p id="error" class="error" role="alert" hidden></p>
-
-    <div class="stage">
-      <figure>
-        <figcaption>Original</figcaption>
-        <div class="frame">
-          <img id="before" alt="" hidden>
-          <span class="placeholder" id="before-empty">Nothing loaded</span>
+    <section class="result" aria-label="Result">
+      <div class="canvas checker" id="canvas">
+        <div class="empty" id="empty">
+          <span>Your cutout appears here.</span>
+          <button class="btn ghost" id="sample" type="button">Use sample image</button>
         </div>
-      </figure>
-      <figure>
-        <figcaption id="after-caption">Cutout</figcaption>
-        <div class="frame">
-          <img id="after" alt="" hidden>
-          <span class="placeholder" id="after-empty">The cutout appears here</span>
+        <img id="output" alt="" hidden>
+        <div class="working" id="working"><div><div class="spinner"></div><p id="working-text">Cutting it out…</p></div></div>
+      </div>
+      <div class="bar">
+        <div class="group" role="group" aria-label="Preview background">
+          <span class="label">Background</span>
+          <button class="swatch checker" data-bg="checker" aria-pressed="true" title="See-through"></button>
+          <button class="swatch cream" data-bg="cream" aria-pressed="false" title="Cream"></button>
+          <button class="swatch coral" data-bg="coral" aria-pressed="false" title="Coral"></button>
+          <button class="swatch night" data-bg="night" aria-pressed="false" title="Black"></button>
         </div>
-      </figure>
-    </div>
+        <div class="group">
+          <div class="toggle" role="group" aria-label="Style">
+            <button type="button" data-style="cutout" aria-pressed="true">Cutout</button>
+            <button type="button" data-style="sticker" aria-pressed="false">Sticker</button>
+          </div>
+          <a class="btn primary" id="save" href="#" download="kata-cutout.png" aria-disabled="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12M7 11l5 5 5-5M5 20h14"/></svg>
+            Download
+          </a>
+        </div>
+      </div>
+    </section>
+  </div>
 
-    <p id="stats" class="stats" aria-live="polite">No result yet.</p>
+  <p class="note" id="note" aria-live="polite"></p>
 
-    <div class="footer-actions">
-      <a id="save" class="button quiet" download="kata-cutout.png" href="#" hidden>Save the PNG</a>
-    </div>
-  </section>
-</main>
+  <footer>
+    <span>Your photos never leave this computer.</span>
+    <a href="https://github.com/ianclemence/kata" target="_blank" rel="noopener">About Kata</a>
+  </footer>
+</div>
 
 <script>
 (function () {
   "use strict";
-
+  var $ = function (id) { return document.getElementById(id); };
   var els = {
-    file: document.getElementById("file"),
-    dropzone: document.getElementById("dropzone"),
-    sample: document.getElementById("sample"),
-    sticker: document.getElementById("sticker"),
-    stage: document.getElementById("stage"),
-    status: document.getElementById("status"),
-    error: document.getElementById("error"),
-    stats: document.getElementById("stats"),
-    before: document.getElementById("before"),
-    beforeEmpty: document.getElementById("before-empty"),
-    after: document.getElementById("after"),
-    afterEmpty: document.getElementById("after-empty"),
-    afterCaption: document.getElementById("after-caption"),
-    save: document.getElementById("save")
+    drop: $("drop"), file: $("file"), original: $("original"), swap: $("swap"),
+    canvas: $("canvas"), output: $("output"), empty: $("empty"), working: $("working"), workingText: $("working-text"),
+    save: $("save"), sample: $("sample"), error: $("error"), note: $("note"), state: $("state"), setup: $("setup")
   };
-
   var MAX_BYTES = 64 * 1024 * 1024;
-  var source = null;       // { name, bytes, url }
-  var resultUrl = null;    // object URL of the current output
-  var runToken = 0;        // ignore answers from a superseded run
-  var busy = false;
+  var source = null, resultUrl = null, runToken = 0, busy = false, style = "cutout";
 
-  function setStatus(text) {
-    els.status.textContent = text;
+  fetch("/status").then(function (r) { return r.json(); }).then(function (s) {
+    var label = els.state.querySelector("span");
+    if (s.model) { els.state.className = "pill ok"; label.textContent = "Ready"; }
+    else { els.state.className = "pill warn"; label.textContent = "Setup needed"; els.setup.classList.add("show"); }
+  }).catch(function () {
+    els.state.className = "pill warn"; els.state.querySelector("span").textContent = "Not connected";
+  });
+
+  function showError(text) { els.error.textContent = text; els.error.hidden = false; }
+  function clearError() { els.error.hidden = true; els.error.textContent = ""; }
+  function setBusy(on, text) {
+    busy = on;
+    els.drop.classList.toggle("busy", on);
+    els.working.classList.toggle("show", on);
+    if (text) { els.workingText.textContent = text; }
+    els.file.disabled = on; els.sample.disabled = on;
   }
+  function size(bytes) { return bytes < 1048576 ? (bytes / 1024).toFixed(0) + " KB" : (bytes / 1048576).toFixed(1) + " MB"; }
 
-  function showError(message) {
-    els.error.textContent = message;
-    els.error.hidden = false;
-  }
-
-  function clearError() {
-    els.error.textContent = "";
-    els.error.hidden = true;
-  }
-
-  function setBusy(next, label) {
-    busy = next;
-    els.stage.setAttribute("aria-busy", next ? "true" : "false");
-    els.dropzone.classList.toggle("is-busy", next);
-    [els.file, els.sample, els.sticker].forEach(function (control) {
-      control.disabled = next;
-    });
-    if (next && label) {
-      setStatus(label);
-    }
-  }
-
-  function formatBytes(bytes) {
-    if (bytes < 1024) { return bytes + " B"; }
-    if (bytes < 1024 * 1024) { return (bytes / 1024).toFixed(1) + " kB"; }
-    return (bytes / (1024 * 1024)).toFixed(2) + " MB";
-  }
-
-  function showSource() {
-    els.before.src = source.url;
-    els.before.alt = "Original: " + source.name;
-    els.before.hidden = false;
-    els.beforeEmpty.hidden = true;
-  }
-
-  // Read the output PNG back through a canvas so the stats describe the file
-  // the user actually got, not what the server meant to send.
-  function measurePng(blob) {
-    return new Promise(function (resolve, reject) {
-      var canvas = document.createElement("canvas");
-      var context = canvas.getContext("2d", { willReadFrequently: true });
-
-      function inspect(image) {
-        canvas.width = image.width;
-        canvas.height = image.height;
-        context.clearRect(0, 0, canvas.width, canvas.height);
-        context.drawImage(image, 0, 0);
-        var data = context.getImageData(0, 0, canvas.width, canvas.height).data;
-        var transparent = 0;
-        for (var i = 3; i < data.length; i += 4) {
-          if (data[i] === 0) { transparent += 1; }
-        }
-        resolve({ width: canvas.width, height: canvas.height, transparent: transparent });
-      }
-
-      if (typeof createImageBitmap === "function") {
-        createImageBitmap(blob).then(function (bitmap) {
-          inspect(bitmap);
-          if (bitmap.close) { bitmap.close(); }
-        }, reject);
-        return;
-      }
-
-      var url = URL.createObjectURL(blob);
-      var image = new Image();
-      image.onload = function () {
-        inspect(image);
-        URL.revokeObjectURL(url);
-      };
-      image.onerror = function () {
-        URL.revokeObjectURL(url);
-        reject(new Error("the PNG could not be read back for measuring"));
-      };
-      image.src = url;
-    });
-  }
-
-  function renderResult(blob, stats, sticker) {
-    if (resultUrl) { URL.revokeObjectURL(resultUrl); }
-    resultUrl = URL.createObjectURL(blob);
-
-    els.after.src = resultUrl;
-    els.after.alt = (sticker ? "Screen-print sticker" : "Cutout") + " of " + source.name + " on a checkerboard";
-    els.after.hidden = false;
-    els.afterEmpty.hidden = true;
-    els.afterCaption.textContent = sticker ? "Sticker on a checkerboard" : "Cutout on a checkerboard";
-
-    var total = stats.width * stats.height;
-    var share = total > 0 ? (100 * stats.transparent) / total : 0;
-    var kind = sticker ? "Sticker" : "Cutout";
-    els.stats.textContent =
-      kind + " · " + blob.size.toLocaleString() + " bytes (" + formatBytes(blob.size) + ")" +
-      " · " + stats.width + "×" + stats.height + " px" +
-      " · " + stats.transparent.toLocaleString() + " fully transparent pixels (" + share.toFixed(1) + " %)";
-    els.stats.classList.add("is-result");
-
-    els.save.href = resultUrl;
-    els.save.download = sticker ? "kata-sticker.png" : "kata-cutout.png";
-    els.save.hidden = false;
-  }
-
-  async function runPipeline() {
+  async function run() {
     if (!source) { return; }
-
     var token = ++runToken;
-    var sticker = els.sticker.checked;
-    var endpoint = sticker ? "sticker" : "cutout";
-
     clearError();
-    setBusy(true, sticker ? "Rendering the screen-print sticker…" : "Removing the background…");
-    showSource();
-
+    setBusy(true, style === "sticker" ? "Making your sticker…" : "Cutting it out…");
+    els.original.src = source.url; els.original.hidden = false; els.swap.hidden = false;
     try {
-      var response = await fetch("/" + endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/octet-stream" },
-        body: source.bytes
-      });
-
-      if (!response.ok) {
-        var message = (await response.text()).trim();
-        throw new Error(message || ("the server answered " + response.status + "."));
-      }
-
+      var response = await fetch("/" + style, { method: "POST", headers: { "Content-Type": "application/octet-stream" }, body: source.bytes });
+      if (!response.ok) { throw new Error((await response.text()).trim() || "Something went wrong."); }
       var blob = await response.blob();
-      var stats = await measurePng(blob);
       if (token !== runToken) { return; }
-
-      renderResult(blob, stats, sticker);
-      setStatus((sticker ? "Sticker" : "Cutout") + " ready for “" + source.name + "”.");
+      if (resultUrl) { URL.revokeObjectURL(resultUrl); }
+      resultUrl = URL.createObjectURL(blob);
+      els.output.src = resultUrl;
+      els.output.alt = (style === "sticker" ? "Sticker" : "Cutout") + " from " + source.name;
+      els.output.hidden = false; els.empty.hidden = true;
+      var base = source.name.replace(/\.[^.]+$/, "");
+      els.save.href = resultUrl;
+      els.save.download = base + (style === "sticker" ? "-sticker.png" : "-cutout.png");
+      els.save.setAttribute("aria-disabled", "false");
+      els.note.textContent = (style === "sticker" ? "Sticker" : "Cutout") + " of " + source.name + " is ready · " + size(blob.size) + " PNG with a see-through background.";
     } catch (error) {
       if (token !== runToken) { return; }
-      var text = error && error.message ? error.message : String(error);
-      showError("The background could not be removed: " + text);
-      setStatus("Something went wrong — the error is shown above.");
+      showError("That photo couldn't be cut out. " + (error && error.message ? error.message : ""));
     } finally {
       if (token === runToken) { setBusy(false); }
     }
   }
 
-  async function acceptFile(file) {
+  async function accept(file) {
     if (!file || busy) { return; }
-
     if (!/^image\//.test(file.type) && !/\.(png|jpe?g|webp|bmp|tiff?)$/i.test(file.name)) {
-      showError("“" + file.name + "” does not look like an image. Choose a PNG, JPEG, WebP, BMP or TIFF.");
-      return;
+      showError("“" + file.name + "” isn't a photo. Try a JPEG, PNG or WebP."); return;
     }
-    if (file.size > MAX_BYTES) {
-      showError("“" + file.name + "” is " + formatBytes(file.size) + ". This server accepts at most 64 MB.");
-      return;
-    }
-
-    clearError();
-    try {
-      var bytes = await file.arrayBuffer();
-      if (source && source.url) { URL.revokeObjectURL(source.url); }
-      source = { name: file.name, bytes: bytes, url: URL.createObjectURL(file) };
-      await runPipeline();
-    } catch (error) {
-      showError("“" + file.name + "” could not be read: " + (error && error.message ? error.message : String(error)));
-      setStatus("The file could not be read.");
-    }
-  }
-
-  async function useSample() {
-    if (busy) { return; }
-    clearError();
-    setBusy(true, "Fetching the sample image…");
-    try {
-      var response = await fetch("/sample.png", { cache: "no-store" });
-      if (!response.ok) {
-        throw new Error("the sample image could not be loaded (" + response.status + ").");
-      }
-      var blob = await response.blob();
-      var bytes = await blob.arrayBuffer();
-      if (source && source.url) { URL.revokeObjectURL(source.url); }
-      source = { name: "sample.png", bytes: bytes, url: URL.createObjectURL(blob) };
-      setBusy(false);
-      await runPipeline();
-    } catch (error) {
-      setBusy(false);
-      var reason = error && error.message ? error.message : String(error);
-      showError("The sample image could not be loaded: " + reason + " Check that the kata-web server is still running.");
-      setStatus("The sample image could not be loaded.");
-    }
+    if (file.size > MAX_BYTES) { showError("“" + file.name + "” is " + size(file.size) + ". Photos up to 64 MB work."); return; }
+    if (source && source.url) { URL.revokeObjectURL(source.url); }
+    source = { name: file.name, bytes: await file.arrayBuffer(), url: URL.createObjectURL(file) };
+    run();
   }
 
   els.file.addEventListener("change", function () {
-    var file = els.file.files && els.file.files[0];
-    els.file.value = "";
-    if (file) { acceptFile(file); }
+    var file = els.file.files && els.file.files[0]; els.file.value = ""; if (file) { accept(file); }
   });
-
-  els.sample.addEventListener("click", useSample);
-
-  els.sticker.addEventListener("change", function () {
-    if (source && !busy) { runPipeline(); }
+  els.sample.addEventListener("click", async function (event) {
+    event.preventDefault(); event.stopPropagation();
+    if (busy) { return; }
+    try {
+      var blob = await (await fetch("/sample.png", { cache: "no-store" })).blob();
+      if (source && source.url) { URL.revokeObjectURL(source.url); }
+      source = { name: "sample.png", bytes: await blob.arrayBuffer(), url: URL.createObjectURL(blob) };
+      run();
+    } catch (e) { showError("The sample couldn't be loaded. Is Kata still running?"); }
   });
-
-  ["dragenter", "dragover"].forEach(function (type) {
-    els.dropzone.addEventListener(type, function (event) {
-      event.preventDefault();
-      if (!busy) { els.dropzone.classList.add("is-dragging"); }
+  document.querySelectorAll("[data-style]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      style = b.dataset.style;
+      document.querySelectorAll("[data-style]").forEach(function (o) { o.setAttribute("aria-pressed", String(o === b)); });
+      if (source && !busy) { run(); }
     });
   });
-
-  ["dragleave", "dragend"].forEach(function (type) {
-    els.dropzone.addEventListener(type, function () {
-      els.dropzone.classList.remove("is-dragging");
+  document.querySelectorAll("[data-bg]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      els.canvas.className = "canvas " + b.dataset.bg;
+      document.querySelectorAll("[data-bg]").forEach(function (o) { o.setAttribute("aria-pressed", String(o === b)); });
     });
   });
-
-  els.dropzone.addEventListener("drop", function (event) {
-    event.preventDefault();
-    els.dropzone.classList.remove("is-dragging");
-    var file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
-    if (file) { acceptFile(file); }
+  ["dragenter", "dragover"].forEach(function (t) { els.drop.addEventListener(t, function (e) { e.preventDefault(); if (!busy) { els.drop.classList.add("dragging"); } }); });
+  ["dragleave", "dragend"].forEach(function (t) { els.drop.addEventListener(t, function () { els.drop.classList.remove("dragging"); }); });
+  els.drop.addEventListener("drop", function (e) {
+    e.preventDefault(); els.drop.classList.remove("dragging");
+    var file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (file) { accept(file); }
   });
-
-  // Dropping outside the zone must not navigate away from the tool.
-  window.addEventListener("dragover", function (event) { event.preventDefault(); });
-  window.addEventListener("drop", function (event) { event.preventDefault(); });
+  window.addEventListener("dragover", function (e) { e.preventDefault(); });
+  window.addEventListener("drop", function (e) { e.preventDefault(); });
+  window.addEventListener("paste", function (e) {
+    var items = (e.clipboardData && e.clipboardData.items) || [];
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf("image/") === 0) {
+        var f = items[i].getAsFile();
+        if (f) { accept(new File([f], "pasted-photo.png", { type: f.type })); }
+        return;
+      }
+    }
+  });
 })();
 </script>
 </body>

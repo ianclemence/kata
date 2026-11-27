@@ -4,6 +4,22 @@ All notable changes to Kata. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.1.1] - 2026-11-27
+
+### Added
+
+- A Windows installer, `kata-<version>-setup.exe`: installs for you alone into
+  any folder (for example `D:\Kata`), adds Kata to the Start menu, the desktop
+  and PATH, and offers to download the cutout engine at the end.
+- `kata-app`, the windowed launcher the shortcuts open, so no console window
+  appears.
+- `kata-web --open` opens the page, reusing one already running.
+
+### Changed
+
+- A redesigned page: drop or paste a photo, preview the cutout on different
+  backgrounds, switch between cutout and sticker, download.
+
 ## [0.1.0] - 2026-11-27
 
 The first public release: from a photo to a reviewed poster, for people and agents.
@@ -52,4 +68,5 @@ The first public release: from a photo to a reviewed poster, for people and agen
   prints and cutouts stay aligned with their photo.
 - The local web UI uses the real model when one is installed.
 
+[0.1.1]: https://github.com/ianclemence/kata/releases/tag/v0.1.1
 [0.1.0]: https://github.com/ianclemence/kata/releases/tag/v0.1.0

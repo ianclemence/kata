@@ -61,6 +61,7 @@ jobs:
           if [[ "${{ matrix.target }}" == *windows* ]]; then EXE=".exe"; fi
           cp "target/${{ matrix.target }}/release/kata${EXE}" "$DIR/"
           cp "target/${{ matrix.target }}/release/kata-web${EXE}" "$DIR/"
+          cp "target/${{ matrix.target }}/release/kata-app${EXE}" "$DIR/"
           python scripts/fetch-onnxruntime.py "$DIR" --version "$ORT_VERSION"
           cp -r skills examples docs README.md CHANGELOG.md LICENSE-MIT LICENSE-APACHE "$DIR/"
           cp assets/kata.ico assets/kata.png "$DIR/"
@@ -80,10 +81,28 @@ jobs:
             echo "file=dist/${NAME}.tar.gz" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Windows installer
+        if: contains(matrix.target, 'windows')
+        id: installer
+        shell: pwsh
+        run: |
+          choco install nsis -y --no-progress | Out-Null
+          $nsis = (Get-Command makensis -ErrorAction SilentlyContinue).Source
+          if (-not $nsis) { $nsis = "C:\Program Files (x86)\NSIS\makensis.exe" }
+          $tag = "${{ github.event.inputs.tag || github.ref_name }}"
+          $version = $tag.TrimStart("v")
+          $dist = (Resolve-Path "dist\kata-$tag-${{ matrix.target }}").Path
+          $out = "$PWD\dist\kata-$tag-setup.exe"
+          & $nsis "/DVERSION=$version" "/DDIST=$dist" "/DOUTFILE=$out" "installer\kata.nsi"
+          if ($LASTEXITCODE -ne 0) { throw "makensis failed" }
+          "file=dist/kata-$tag-setup.exe" >> $env:GITHUB_OUTPUT
+
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.target }}
-          path: ${{ steps.package.outputs.file }}
+          path: |
+            ${{ steps.package.outputs.file }}
+            ${{ steps.installer.outputs.file }}
           if-no-files-found: error
 
   publish:

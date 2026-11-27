@@ -472,7 +472,7 @@ dependencies = [
 
 [[package]]
 name = "kata-cli"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "image",
  "kata-core",
@@ -485,7 +485,7 @@ dependencies = [
 
 [[package]]
 name = "kata-core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "console_error_panic_hook",
  "hex",
@@ -502,7 +502,7 @@ dependencies = [
 
 [[package]]
 name = "kata-engine"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "base64 0.22.1",
  "half",
@@ -520,7 +520,7 @@ dependencies = [
 
 [[package]]
 name = "kata-mcp"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "base64 0.22.1",
  "image",
@@ -532,7 +532,7 @@ dependencies = [
 
 [[package]]
 name = "kata-web"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "image",
  "kata-core",

@@ -20,53 +20,29 @@ can drive the whole workflow, and the design judgement ships with it as
 *Kata* is Swahili for "cut".
 
 ```
-photo ─► segment ─► mask edits ─► print in brand inks ─► compose ─► review ─► export
-         BiRefNet,  explicit,     tonal / spot / line,    JSON scene, collisions, legibility,
-         hints,     undoable      two-layer scenes        resvg       logo size, safe areas
-         cached
+photo ─► cut out ─► touch up ─► print in brand inks ─► lay out ─► review ─► export
+                     (undoable)   (tonal / spot / line)                (collisions, legibility,
+                                                                        logo size, safe areas)
 ```
 
 ## Install
 
-**Windows:** download `kata-<version>-x86_64-pc-windows-msvc.zip` from
-[Releases](https://github.com/ianclemence/kata/releases), unzip it, and run:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File install-windows.ps1
-```
-
-That installs Kata to `%LOCALAPPDATA%\Programs\Kata`, adds `kata` to your PATH,
-puts **Kata** in the Start menu (it opens the local web page), and registers
-an uninstaller in Settings → Apps.
+**Windows:** download `kata-<version>-setup.exe` from
+[Releases](https://github.com/ianclemence/kata/releases) and run it. It installs
+for you alone (no administrator password), into any folder you choose (`D:\Kata`
+works), adds **Kata** to the Start menu, the desktop and your PATH, and offers
+to download the cutout engine at the end.
 
 **macOS and Linux:** download the archive for your platform, unpack it, and put
-the folder on your `PATH`. Every archive includes the ONNX Runtime library Kata
-loads.
-
-Then fetch a segmentation model once. Kata checks it against its SHA-256:
+the folder on your `PATH`. Then fetch the cutout engine once (Kata checks the
+download before using it):
 
 ```sh
-kata models download birefnet-lite-fp32     # 224 MB, the fast CPU choice
+kata models download birefnet-lite-fp32     # 214 MB, fast on any computer
+kata models list                            # sharper options
 kata status                                 # what Kata found
 ```
 
-| Model | Size | Notes |
-|---|---|---|
-| `birefnet-lite-fp32` | 224 MB | Fast on any CPU |
-| `birefnet-lite-fp16` | 115 MB | Fast, needs fp16 support |
-| `birefnet-general-fp16` | 490 MB | Best edges, slowest |
-
-Any BiRefNet-style `.onnx` file also works: pass `--model path/to/model.onnx`
-or set `KATA_MODEL=path`.
-
-### Build from source
-
-Needs Rust 1.85 or newer.
-
-```sh
-cargo build --release -p kata-cli -p kata-web
-python scripts/fetch-onnxruntime.py target/release   # ONNX Runtime beside the binary
-```
 
 ## Command line
 
@@ -137,28 +113,14 @@ skills, so one Kata serves every project. See
 - [docs/scene.md](docs/scene.md): the poster scene format and the review
 - [docs/mask-ops.md](docs/mask-ops.md): hints and mask edits
 - [docs/print.md](docs/print.md): print specs
-
-## How it's built
-
-| Crate | What it is |
-|---|---|
-| `kata-core` | The algorithms: masks and edits, guided-filter matting, Lab colour, tonal and spot printing, line plates, paper, crease detection, inspections, export targets. No I/O; builds for WebAssembly. |
-| `kata-engine` | ONNX Runtime (loaded at run time), checked model downloads, the mask cache, scene composition with resvg, and the review. |
-| `kata-mcp` | The MCP server: tools, resources, prompts, path sandbox and artifact ids. |
-| `kata-cli` | The `kata` binary. |
-| `kata-web` | A local web page for quick cutouts, served on loopback only. |
-
-Kata looks for ONNX Runtime in this order: `KATA_ORT_DYLIB`, `ORT_DYLIB_PATH`,
-next to the `kata` binary, a `lib/` folder beside it, then Kata's data folder.
-`kata status` prints every path it tried.
+- [docs/building.md](docs/building.md): building Kata yourself
 
 ## Privacy and safety
 
 - Images never leave your machine. The only network access is downloading a
-  model you ask for, which is checked against the publisher's SHA-256.
+  engine you ask for, and that download is checked before it is used.
 - The MCP server reads and writes only inside its work folder and the folders
   you pass with `--allow`.
-- The models (BiRefNet) are MIT licensed.
 
 ## Licence
 
