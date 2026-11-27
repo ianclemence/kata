@@ -26,7 +26,9 @@ const MAX_HEAD: usize = 16 * 1024;
 const PAGE: &str = include_str!("page.html");
 
 fn main() {
-    let port = match resolve_port(env::args().skip(1)) {
+    // --open: start (or reuse) the server and open the page. The Start menu entry uses it.
+    let open = env::args().any(|a| a == "--open");
+    let port = match resolve_port(env::args().skip(1).filter(|a| a != "--open")) {
         Ok(Some(port)) => port,
         Ok(None) => {
             println!("{}", usage());
@@ -38,8 +40,14 @@ fn main() {
         }
     };
 
+    let url = format!("http://127.0.0.1:{port}");
     let listener = match TcpListener::bind(("127.0.0.1", port)) {
         Ok(listener) => listener,
+        // Already running (a second click on the shortcut): just show it.
+        Err(_) if open && TcpStream::connect(("127.0.0.1", port)).is_ok() => {
+            open_browser(&url);
+            return;
+        }
         Err(error) => {
             eprintln!("kata-web: cannot listen on 127.0.0.1:{port}: {error}");
             std::process::exit(1);
@@ -51,15 +59,35 @@ fn main() {
     }
     println!("Press Ctrl+C to stop.");
 
+    if open {
+        open_browser(&url);
+    }
     serve(listener);
+}
+
+/// Open a URL in the default browser.
+fn open_browser(url: &str) {
+    let result = if cfg!(target_os = "windows") {
+        std::process::Command::new("rundll32")
+            .args(["url.dll,FileProtocolHandler", url])
+            .spawn()
+    } else if cfg!(target_os = "macos") {
+        std::process::Command::new("open").arg(url).spawn()
+    } else {
+        std::process::Command::new("xdg-open").arg(url).spawn()
+    };
+    if let Err(error) = result {
+        eprintln!("kata-web: open {url} in your browser ({error})");
+    }
 }
 
 fn usage() -> &'static str {
     "Kata web UI — the kata-core pipeline in a browser, on 127.0.0.1 only.
 
-Usage: kata-web [--port <PORT>]
+Usage: kata-web [--port <PORT>] [--open]
 
   --port <PORT>   port to listen on (default 8765, or the KATA_WEB_PORT env var)
+  --open          open the page in the browser (reuses a server already running)
   -h, --help      print this help"
 }
 

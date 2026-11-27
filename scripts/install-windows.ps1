@@ -23,23 +23,17 @@ foreach ($folder in @("skills", "examples", "docs", "assets")) {
     if (Test-Path $from) { Copy-Item $from $Target -Recurse -Force }
 }
 
-# Opening "Kata" starts the local web page quietly and opens it in the browser.
-$launcher = Join-Path $Target "launch.vbs"
-@"
-Set shell = CreateObject("WScript.Shell")
-shell.Run """$Target\kata-web.exe""", 0, False
-WScript.Sleep 1200
-shell.Run "http://127.0.0.1:8765", 1, False
-"@ | Set-Content -Path $launcher -Encoding ASCII
-
-# Start menu shortcut with Kata's icon.
+# Start menu shortcut. It must point at Kata's own program: Windows leaves
+# shortcuts to script hosts (wscript, powershell) out of its app list.
+Remove-Item (Join-Path $Target "launch.vbs") -Force -ErrorAction SilentlyContinue
 $programs = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs"
 $shell = New-Object -ComObject WScript.Shell
 $link = $shell.CreateShortcut((Join-Path $programs "Kata.lnk"))
-$link.TargetPath = "$env:WINDIR\System32\wscript.exe"
-$link.Arguments = "`"$launcher`""
+$link.TargetPath = "$Target\kata-web.exe"
+$link.Arguments = "--open"
 $link.WorkingDirectory = $Target
 $link.IconLocation = "$Target\kata.ico,0"
+$link.WindowStyle = 7
 $link.Description = "Kata: cut, print, compose and review"
 $link.Save()
 
