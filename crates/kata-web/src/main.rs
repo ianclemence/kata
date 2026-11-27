@@ -413,9 +413,9 @@ mod tests {
         stream.write_all(head.as_bytes()).expect("write the head");
         stream.write_all(body).expect("write the body");
         stream.flush().expect("flush");
-        stream
-            .shutdown(std::net::Shutdown::Write)
-            .expect("half-close the request");
+        // The server may already have answered and closed (a 404 needs no body);
+        // macOS then reports the half-close as NotConnected. That is not a failure.
+        let _ = stream.shutdown(std::net::Shutdown::Write);
 
         let mut raw = Vec::new();
         stream.read_to_end(&mut raw).expect("read the response");
